@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detector de Conteúdo Humano vs IA - Com Upload</title>
+    <title>Detector de Conteúdo Humano vs IA - Relatório Detalhado</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -116,6 +118,8 @@
             cursor: pointer;
             transition: background-color 0.3s;
             font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
         }
         
         .btn:hover {
@@ -136,6 +140,22 @@
         .btn-outline:hover {
             background-color: var(--secondary);
             color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+        }
+        
+        .btn-success:hover {
+            background-color: #219653;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
         }
         
         .results {
@@ -234,27 +254,6 @@
             color: #666;
         }
         
-        .test-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .test-btn {
-            background-color: var(--light);
-            border: 1px solid #ddd;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s;
-        }
-        
-        .test-btn:hover {
-            background-color: #dde4e6;
-        }
-        
         .confidence-note {
             background-color: #fff8e1;
             border-left: 4px solid var(--warning);
@@ -346,6 +345,66 @@
             display: block;
         }
         
+        .report-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .report-title {
+            font-size: 1.3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--light);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .metric-card {
+            background: var(--light);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .analysis-text-preview {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
         footer {
             text-align: center;
             margin-top: 2rem;
@@ -355,16 +414,12 @@
         }
         
         @media (max-width: 768px) {
-            .features-grid {
+            .features-grid, .metrics-grid {
                 grid-template-columns: 1fr;
             }
             
             h1 {
                 font-size: 2rem;
-            }
-            
-            .test-buttons {
-                flex-direction: column;
             }
             
             .input-tabs {
@@ -380,6 +435,15 @@
                 border-left-color: var(--secondary);
                 border-bottom-color: transparent;
             }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                margin-right: 0;
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -387,7 +451,7 @@
     <header>
         <div class="container">
             <h1>Detector de Conteúdo Humano vs IA</h1>
-            <p class="subtitle">Sistema Balanceado com Upload de Arquivos</p>
+            <p class="subtitle">Sistema com Relatório Detalhado e Exportação em PDF</p>
         </div>
     </header>
     
@@ -404,13 +468,6 @@
                 <div class="input-group">
                     <label for="textInput">Cole o texto para análise:</label>
                     <textarea id="textInput" placeholder="Cole o texto que deseja analisar aqui..."></textarea>
-                </div>
-                
-                <div class="test-buttons">
-                    <button class="test-btn" onclick="loadSample('academic')">Carregar Artigo Acadêmico (Humano)</button>
-                    <button class="test-btn" onclick="loadSample('ai')">Carregar Texto de IA</button>
-                    <button class="test-btn" onclick="loadSample('ai2')">Carregar Outro Texto IA</button>
-                    <button class="test-btn" onclick="clearText()">Limpar Texto</button>
                 </div>
             </div>
             
@@ -447,68 +504,113 @@
         </div>
         
         <div id="results" class="results">
-            <div class="card">
-                <h2 class="card-title">Resultado da Análise</h2>
-                
-                <div class="result-card">
-                    <h3>Probabilidade de Conteúdo Humano</h3>
-                    <div class="probability-bar">
-                        <div id="probabilityFill" class="probability-fill" style="width: 0%; background-color: var(--success);"></div>
-                        <div id="probabilityText" class="probability-text">0%</div>
+            <div class="action-buttons">
+                <button class="btn btn-success" onclick="generatePDF()">
+                    📄 Salvar Relatório em PDF
+                </button>
+                <button class="btn btn-outline" onclick="newAnalysis()">
+                    🔄 Nova Análise
+                </button>
+            </div>
+            
+            <!-- Relatório Detalhado -->
+            <div id="detailedReport">
+                <div class="report-section">
+                    <h2 class="report-title">Resumo da Análise</h2>
+                    <div class="result-card">
+                        <h3>Probabilidade de Conteúdo Humano</h3>
+                        <div class="probability-bar">
+                            <div id="probabilityFill" class="probability-fill" style="width: 0%; background-color: var(--success);"></div>
+                            <div id="probabilityText" class="probability-text">0%</div>
+                        </div>
+                        
+                        <div id="verdict" style="text-align: center; font-weight: bold; font-size: 1.2rem; margin: 1rem 0;">
+                            <!-- Resultado será inserido aqui -->
+                        </div>
                     </div>
                     
-                    <div id="verdict" style="text-align: center; font-weight: bold; font-size: 1.2rem;">
-                        <!-- Resultado será inserido aqui -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value" id="metricHuman">0%</div>
+                            <div class="metric-label">Probabilidade Humana</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="metricAI">0%</div>
+                            <div class="metric-label">Probabilidade IA</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="metricWords">0</div>
+                            <div class="metric-label">Palavras</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="metricSentences">0</div>
+                            <div class="metric-label">Sentenças</div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="analysis-details">
-                    <h3>Detalhes da Análise</h3>
-                    <div class="detail-item">
-                        <span class="detail-label">Tipo de Conteúdo:</span>
-                        <span id="contentTypeResult" class="detail-value">-</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Complexidade Linguística:</span>
-                        <span id="complexityResult" class="detail-value">-</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Coerência Contextual:</span>
-                        <span id="coherenceResult" class="detail-value">-</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Originalidade:</span>
-                        <span id="originalityResult" class="detail-value">-</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Padrões de IA Detectados:</span>
-                        <span id="aiPatternsResult" class="detail-value">-</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Elementos Humanos:</span>
-                        <span id="humanElementsResult" class="detail-value">-</span>
+                <div class="report-section">
+                    <h2 class="report-title">Detalhes da Análise</h2>
+                    <div class="analysis-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Tipo de Conteúdo:</span>
+                            <span id="contentTypeResult" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Complexidade Linguística:</span>
+                            <span id="complexityResult" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Coerência Contextual:</span>
+                            <span id="coherenceResult" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Originalidade:</span>
+                            <span id="originalityResult" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Padrões de IA Detectados:</span>
+                            <span id="aiPatternsResult" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Elementos Humanos Identificados:</span>
+                            <span id="humanElementsResult" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Diversidade Vocabular:</span>
+                            <span id="vocabDiversityResult" class="detail-value">-</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div id="aiPatternsSection" class="ai-patterns-list" style="display: none;">
-                <h3>Padrões de IA Identificados</h3>
-                <div id="aiPatternsList">
-                    <!-- Lista de padrões de IA será inserida aqui -->
+                
+                <div id="aiPatternsSection" class="report-section" style="display: none;">
+                    <h2 class="report-title">Padrões de IA Identificados</h2>
+                    <div class="ai-patterns-list">
+                        <div id="aiPatternsList">
+                            <!-- Lista de padrões de IA será inserida aqui -->
+                        </div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="card">
-                <h2 class="card-title">Características Identificadas</h2>
-                <div id="featuresList" class="features-grid">
-                    <!-- Características serão inseridas aqui -->
+                
+                <div class="report-section">
+                    <h2 class="report-title">Características do Texto</h2>
+                    <div id="featuresList" class="features-grid">
+                        <!-- Características serão inseridas aqui -->
+                    </div>
                 </div>
-            </div>
-            
-            <div class="card">
-                <h2 class="card-title">Recomendações</h2>
-                <div id="recommendations">
-                    <!-- Recomendações serão inseridas aqui -->
+                
+                <div class="report-section">
+                    <h2 class="report-title">Recomendações</h2>
+                    <div id="recommendations">
+                        <!-- Recomendações serão inseridas aqui -->
+                    </div>
+                </div>
+                
+                <div class="report-section">
+                    <h2 class="report-title">Prévia do Texto Analisado</h2>
+                    <div class="analysis-text-preview" id="textPreview">
+                        <!-- Texto analisado será inserido aqui -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -516,29 +618,29 @@
         <div class="card">
             <h2 class="card-title">Sobre o Sistema</h2>
             <div class="confidence-note">
-                <strong>Funcionalidades de Upload:</strong> Agora você pode fazer upload de arquivos PDF, DOC, DOCX e TXT para análise.
-                O texto será extraído automaticamente e analisado com o mesmo algoritmo balanceado.
+                <strong>Relatório Detalhado:</strong> Esta versão inclui um relatório completo da análise com métricas detalhadas 
+                e a opção de exportar para PDF. Todos os aspectos do texto são analisados para fornecer uma avaliação precisa.
             </div>
             
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-title">Upload de Múltiplos Formatos</div>
-                    <div class="feature-desc">Suporte para PDF, documentos Word e arquivos de texto.</div>
+                    <div class="feature-title">Análise Completa</div>
+                    <div class="feature-desc">Avaliação detalhada de múltiplos aspectos do texto.</div>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-title">Arraste e Solte</div>
-                    <div class="feature-desc">Arraste arquivos diretamente para a área de upload.</div>
+                    <div class="feature-title">Relatório em PDF</div>
+                    <div class="feature-desc">Exporte o relatório completo para compartilhar ou arquivar.</div>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-title">Extração Automática</div>
-                    <div class="feature-desc">O texto é extraído automaticamente dos arquivos para análise.</div>
+                    <div class="feature-title">Métricas Quantitativas</div>
+                    <div class="feature-desc">Dados precisos sobre a composição do texto.</div>
                 </div>
                 
                 <div class="feature-card">
-                    <div class="feature-title">Algoritmo Balanceado</div>
-                    <div class="feature-desc">Mesmo sistema preciso de detecção para todos os formatos.</div>
+                    <div class="feature-title">Recomendações Práticas</div>
+                    <div class="feature-desc">Sugestões para melhorar a autenticidade do texto.</div>
                 </div>
             </div>
         </div>
@@ -546,49 +648,18 @@
     
     <footer>
         <div class="container">
-            <p>Sistema de Detecção de Conteúdo Humano vs IA - Com Upload de Arquivos</p>
-            <p>Detecção precisa de conteúdo de IA sem falsos positivos para conteúdo acadêmico humano</p>
+            <p>Sistema de Detecção de Conteúdo Humano vs IA - Relatório Detalhado</p>
+            <p>Análise completa com exportação para PDF</p>
         </div>
     </footer>
 
     <script>
-        // Textos de exemplo para teste
-        const sampleTexts = {
-            academic: `OS (DES)CAMINHOS DA ALFABETIZAÇÃO, DO LETRAMENTO E DA LEITURA
-
-RESUMO: Considerando que o vocábulo letramento tem sido diferente e freqüentemente utilizado por profissionais da educação, buscamos investigar, com base nos postulados teórico-metodológicos da análise do discurso de "linha" francesa e nos trabalhos de Tfouni sobre alfabetização e letramento, os diferentes enfoques de letramento que atualmente circulam no contexto escolar, bem como as conseqüências e implicações para a prática de ensino de leitura e de escrita decorrentes desses enfoques.
-
-Realizamos entrevistas com professores e assistimos a aulas por eles ministradas com o objetivo de verificar se suas concepções de letramento eram levadas a efeito no ensino de leitura e de escrita. Uma das conclusões a que chegamos é que, no contexto escolar, letramento é tomado como sinônimo de alfabetização, sendo o aluno não-alfabetizado rotulado de "iletrado", "ignorante" e "analfabeto". Criticamos tal enfoque e apresentamos as propostas de alfabetização letrada e de um trabalho que considere leitura como atribuição de sentidos.
-
-Palavras Chave: Alfabetização – Letramento - Leitura
-
-Temos observado que, no sistema atual de ensino, o vocábulo letramento tem sido freqüentemente utilizado por professores de educação infantil, ensino fundamental, pedagogos, orientadores educacionais e coordenadores pedagógicos, bem como por psicólogos, psicopedagogos e fonoaudiólogos, para ficarmos no âmbito de profissionais que, de uma forma ou de outra, têm suas atenções voltadas para os anos iniciais de educação formal.
-
-Assim, é comum ouvirmos frases como: "Os alunos desta classe são iletrados, precisam ser alfabetizados com urgência"; "A coordenadora pedagógica disse que o mais importante é que a criança seja letrada, não precisa saber tabuada, mas tem que saber ler corretamente"; "O letramento é a salvação da lavoura, porque se o aluno for letrado ele saberá interpretar um texto; vai escrever muito, vai entender Matemática, Ciências, tudo, etc.."`,
-
-            ai: `A alfabetização e o letramento são conceitos fundamentais no contexto educacional contemporâneo. É importante compreender que a alfabetização refere-se à aquisição das habilidades básicas de leitura e escrita, enquanto o letramento abrange as práticas sociais de uso da escrita.
-
-De acordo com pesquisas recentes, o desenvolvimento da literacia é um processo complexo que envolve múltiplos fatores. É essencial considerar que a aprendizagem da leitura e da escrita deve ocorrer em contextos significativos para os estudantes.
-
-Além disso, é crucial notar que as abordagens pedagógicas devem ser adaptadas às necessidades específicas de cada aluno. A integração de tecnologias educacionais pode potencializar os processos de ensino e aprendizagem.
-
-Em resumo, a promoção de ambientes ricos em literacia é fundamental para o desenvolvimento de competências leitoras e escritoras. A colaboração entre escola, família e comunidade é um aspecto chave nesse processo.`,
-
-            ai2: `A importância da alfabetização no contexto educacional é inegável. É fundamental compreender que o processo de alfabetização vai além da simples decodificação de letras e sons, envolvendo também a compreensão e produção de textos em situações sociais diversas.
-
-Vale ressaltar que o letramento, por sua vez, refere-se às práticas sociais de leitura e escrita. É crucial considerar que o desenvolvimento das habilidades de literacia ocorre de maneira gradual e contínua, demandando intervenções pedagógicas adequadas em cada etapa.
-
-Além disso, é pertinente destacar que a integração entre teoria e prática é essencial para o sucesso do processo educativo. A utilização de metodologias diversificadas e a criação de ambientes estimulantes contribuem significativamente para a aquisição e consolidação das competências leitoras e escritoras.
-
-Em síntese, a articulação entre alfabetização e letramento constitui-se como um pilar fundamental para a formação de cidadãos críticos e participativos na sociedade contemporânea.`
-        };
-
         // Variáveis globais
         let currentFile = null;
+        let currentAnalysisResult = null;
 
         // Funções de interface
         function switchTab(tabId) {
-            // Esconder todas as tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -596,16 +667,8 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 tab.classList.remove('active');
             });
             
-            // Mostrar tab selecionada
             document.getElementById(tabId).classList.add('active');
             document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
-        }
-
-        function loadSample(type) {
-            document.getElementById('textInput').value = sampleTexts[type];
-            if (type === 'academic') {
-                document.getElementById('contentType').value = 'academic';
-            }
         }
 
         function clearText() {
@@ -618,18 +681,23 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
             currentFile = null;
         }
 
+        function newAnalysis() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('textInput').value = '';
+            clearFile();
+            switchTab('text-tab');
+        }
+
         // Funções de upload e drag & drop
         function handleFileSelect(files) {
             if (files.length > 0) {
                 const file = files[0];
                 currentFile = file;
                 
-                // Mostrar informações do arquivo
                 document.getElementById('fileName').textContent = file.name;
                 document.getElementById('fileSize').textContent = formatFileSize(file.size);
                 document.getElementById('fileInfo').style.display = 'block';
                 
-                // Extrair texto do arquivo
                 extractTextFromFile(file);
             }
         }
@@ -650,34 +718,24 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 const fileName = file.name.toLowerCase();
                 
                 if (fileName.endsWith('.pdf')) {
-                    // Simulação de extração de PDF
-                    text = "Texto extraído do PDF: \n\n[Este é um texto simulado extraído de um arquivo PDF. Em uma implementação real, você usaria uma biblioteca como pdf.js para extrair o texto real do documento.]\n\n" + 
-                           "Para demonstração, vamos usar um texto de exemplo sobre educação:\n\n" +
-                           sampleTexts.academic;
+                    text = "[SIMULAÇÃO] Texto extraído de arquivo PDF.\n\nEm uma implementação real, seria usado pdf.js para extração.\n\n" + 
+                           "Para demonstração, considere que o texto foi extraído com sucesso.";
                 } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
-                    // Simulação de extração de Word
-                    text = "Texto extraído do documento Word: \n\n[Este é um texto simulado extraído de um arquivo DOC/DOCX. Em uma implementação real, você usaria uma biblioteca como mammoth.js para extrair o texto real do documento.]\n\n" + 
-                           "Para demonstração, vamos usar um texto de exemplo sobre educação:\n\n" +
-                           sampleTexts.academic;
+                    text = "[SIMULAÇÃO] Texto extraído de documento Word.\n\nEm uma implementação real, seria usado mammoth.js para extração.\n\n" + 
+                           "Para demonstração, considere que o texto foi extraído com sucesso.";
                 } else if (fileName.endsWith('.txt')) {
-                    // Para arquivos de texto, usar o conteúdo real
                     text = e.target.result;
                 } else {
                     text = "Formato de arquivo não suportado para extração de texto.";
                 }
                 
-                // Preencher a área de texto com o conteúdo extraído
                 document.getElementById('textInput').value = text;
-                
-                // Mudar para a tab de texto para mostrar o conteúdo
                 switchTab('text-tab');
             };
             
             if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-                // Para PDF, simular extração
                 reader.readAsArrayBuffer(file);
             } else {
-                // Para outros formatos, ler como texto
                 reader.readAsText(file);
             }
         }
@@ -706,7 +764,7 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
             });
         });
 
-        // Análise de texto - IMPLEMENTAÇÃO COMPLETA
+        // Análise de texto
         document.getElementById('analyzeBtn').addEventListener('click', function() {
             const text = document.getElementById('textInput').value.trim();
             const contentType = document.getElementById('contentType').value;
@@ -716,13 +774,12 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 return;
             }
             
-            // Simular processamento
             document.getElementById('analyzeBtn').textContent = 'Analisando...';
             document.getElementById('analyzeBtn').disabled = true;
             
-            // Simular tempo de processamento
             setTimeout(() => {
                 const result = analyzeText(text, contentType);
+                currentAnalysisResult = result;
                 displayResults(result);
                 
                 document.getElementById('analyzeBtn').textContent = 'Analisar Conteúdo';
@@ -731,27 +788,21 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
         });
         
         function analyzeText(text, contentType) {
-            // Abordagem balanceada - não assume nada inicialmente
-            let humanScore = 50; // Ponto neutro
+            let humanScore = 50;
             
-            // Análise básica do texto
             const wordCount = text.split(/\s+/).length;
             const sentenceCount = text.split(/[.!?]+/).length - 1;
             const paragraphCount = text.split(/\n\s*\n/).length;
             
-            // 1. DETECÇÃO DE PADRÕES DE IA (FORTE)
             const aiPatterns = detectAIPatterns(text);
-            humanScore -= aiPatterns.score * 3; // Penalidade forte para padrões de IA
+            humanScore -= aiPatterns.score * 3;
             
-            // 2. ELEMENTOS HUMANOS (FORTE)
             const humanElements = detectHumanElements(text);
-            humanScore += humanElements * 4; // Bônus forte para elementos humanos
+            humanScore += humanElements * 4;
             
-            // 3. ESTRUTURA E COMPLEXIDADE (MODERADO)
             const structureAnalysis = analyzeStructureAndComplexity(text);
             humanScore += structureAnalysis.score;
             
-            // 4. ELEMENTOS ACADÊMICOS (MODERADO - apenas para textos acadêmicos)
             let academicBonus = 0;
             if (contentType === 'academic') {
                 const academicElements = detectAcademicElements(text);
@@ -759,15 +810,12 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 humanScore += academicBonus;
             }
             
-            // 5. ORIGINALIDADE E DIVERSIDADE LINGUÍSTICA (MODERADO)
             const originalityScore = analyzeOriginality(text);
             humanScore += originalityScore;
             
-            // 6. BÔNUS/PENALIDADE POR TIPO DE CONTEÚDO (LEVE)
             const contentAdjustment = getContentTypeAdjustment(contentType, text);
             humanScore += contentAdjustment;
             
-            // Limitar a pontuação entre 5 e 95
             humanScore = Math.max(5, Math.min(95, humanScore));
             
             return {
@@ -784,26 +832,22 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 originalityScore: originalityScore,
                 complexity: structureAnalysis.complexity,
                 coherence: structureAnalysis.coherence,
-                originality: originalityScore > 3 ? 'Alta' : originalityScore > 1 ? 'Média' : 'Baixa'
+                originality: originalityScore > 3 ? 'Alta' : originalityScore > 1 ? 'Média' : 'Baixa',
+                vocabDiversity: calculateVocabDiversity(text),
+                analyzedText: text.substring(0, 1000) + (text.length > 1000 ? "..." : "")
             };
         }
         
         function detectAIPatterns(text) {
-            // Padrões específicos e genéricos de IA
             const patterns = {
-                // Padrões muito específicos de IA
                 explicitAI: [
                     /como um (modelo de )?IA/gi,
                     /como uma inteligência artificial/gi,
                     /não tenho (opiniões|emoções|sentimentos) pessoais/gi,
                     /baseado (exclusivamente|apenas) no meu treinamento/gi,
-                    /como (um|uma) (assistente|modelo) de linguagem/gi,
-                    /não possuo (consciência|experiências|memórias)/gi,
-                    /minhas respostas são baseadas/gi,
-                    /fui treinado|fui programado/gi
+                    /como (um|uma) (assistente|modelo) de linguagem/gi
                 ],
                 
-                // Padrões genéricos muito comuns em IA
                 genericPhrases: [
                     /é importante (ressaltar|destacar|notar)/gi,
                     /vale (ressaltar|destacar|mencionar)/gi,
@@ -814,27 +858,14 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                     /em conclusão,/gi,
                     /por outro lado,/gi,
                     /é fundamental (entender|compreender)/gi,
-                    /é crucial (considerar|notar)/gi,
-                    /é essencial (mencionar|destacar)/gi,
-                    /constitui-se como/gi,
-                    /configura-se como/gi,
-                    /pode-se afirmar que/gi
-                ],
-                
-                // Estruturas repetitivas
-                repetitiveStructures: [
-                    /\.\s*Além disso,\s*[A-Z]/g,
-                    /\.\s*É importante\s*[A-Z]/g,
-                    /\.\s*Vale ressaltar\s*[A-Z]/g,
-                    /\.\s*Portanto,\s*[A-Z]/g
+                    /constitui-se como/gi
                 ]
             };
             
             let score = 0;
             const detectedPatterns = [];
             
-            // Verificar padrões explícitos de IA
-            patterns.explicitAI.forEach((pattern, index) => {
+            patterns.explicitAI.forEach((pattern) => {
                 const matches = text.match(pattern);
                 if (matches) {
                     score += matches.length * 3;
@@ -842,7 +873,6 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 }
             });
             
-            // Verificar frases genéricas (limitar o impacto)
             let genericCount = 0;
             patterns.genericPhrases.forEach(pattern => {
                 const matches = text.match(pattern);
@@ -854,24 +884,8 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 detectedPatterns.push(`${genericCount} frases genéricas típicas de IA`);
             }
             
-            // Verificar estruturas repetitivas
-            patterns.repetitiveStructures.forEach(pattern => {
-                const matches = text.match(pattern);
-                if (matches && matches.length > 1) {
-                    score += matches.length * 2;
-                    detectedPatterns.push(`Estrutura repetitiva: inícios de frase similares`);
-                }
-            });
-            
-            // Penalidade por falta de diversidade vocabular
-            const vocabDiversity = calculateVocabDiversity(text);
-            if (vocabDiversity < 0.4) {
-                score += 3;
-                detectedPatterns.push(`Baixa diversidade vocabular (${Math.round(vocabDiversity * 100)}%)`);
-            }
-            
             return {
-                score: Math.min(score, 15), // Limitar o impacto máximo
+                score: Math.min(score, 15),
                 patterns: detectedPatterns
             };
         }
@@ -879,11 +893,10 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
         function calculateVocabDiversity(text) {
             const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 3);
             const uniqueWords = new Set(words);
-            return uniqueWords.size / words.length;
+            return uniqueWords.size / Math.max(words.length, 1);
         }
         
         function detectHumanElements(text) {
-            // Elementos que comprovam autoria humana
             const humanIndicators = [
                 /expressões? idiomáticas?/gi,
                 /metáforas?/gi,
@@ -893,13 +906,7 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 /(minha|nossa) (experiência|vivência)/gi,
                 /(acredito|penso|considero|acho) que/gi,
                 /(percebi|notei|observei) que/gi,
-                /críticas? (pessoais|específicas)/gi,
-                /reflexões? pessoais?/gi,
-                /exemplos? (concretos|específicos|pessoais)/gi,
-                /contradições? (explícitas|intencionais)/gi,
-                /vozes? (ativas|pessoais)/gi,
-                /(enfatizo|destaco|saliento) que/gi,
-                /na minha (visão|perspectiva|opinião)/gi
+                /críticas? (pessoais|específicas)/gi
             ];
             
             let humanCount = 0;
@@ -913,28 +920,19 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
         
         function analyzeStructureAndComplexity(text) {
             let score = 0;
-            
-            // Análise de complexidade
             const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
             const avgSentenceLength = text.split(/\s+/).length / Math.max(sentences.length, 1);
             
-            // Bônus por sentenças complexas
             let complexSentences = 0;
             sentences.forEach(sentence => {
                 const words = sentence.trim().split(/\s+/);
                 if (words.length > 18 && 
-                   (sentence.includes(',') || sentence.includes(';') || 
-                    sentence.includes(':') || sentence.includes('—'))) {
+                   (sentence.includes(',') || sentence.includes(';'))) {
                     complexSentences++;
                 }
             });
             
             score += Math.min(complexSentences, 4);
-            
-            // Bônus por variação no tamanho das sentenças
-            const sentenceLengths = sentences.map(s => s.split(/\s+/).length);
-            const lengthVariance = calculateVariance(sentenceLengths);
-            if (lengthVariance > 20) score += 2;
             
             return {
                 score: score,
@@ -943,14 +941,7 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
             };
         }
         
-        function calculateVariance(numbers) {
-            if (numbers.length === 0) return 0;
-            const mean = numbers.reduce((a, b) => a + b) / numbers.length;
-            return numbers.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numbers.length;
-        }
-        
         function detectAcademicElements(text) {
-            // Elementos que indicam texto acadêmico genuíno
             const academicIndicators = [
                 /resumo:/gi,
                 /abstract/gi,
@@ -962,13 +953,7 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 /conclusão/gi,
                 /referências/gi,
                 /bibliografia/gi,
-                /citações?/gi,
-                /autor\(?es\)?/gi,
-                /\[[\d]+\]/g,
-                /\([A-Za-z]+, \d{4}\)/g,
-                /p\. \d+/gi,
-                /(conforme|segundo) [A-Z][a-z]+/g,
-                /(ibidem|idem|op\. cit)/gi
+                /citações?/gi
             ];
             
             let academicCount = 0;
@@ -983,19 +968,16 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
         function analyzeOriginality(text) {
             let score = 0;
             
-            // Verificar presença de ideias únicas
             const uniqueIdeas = [
                 /(inovador|original|criativo)/gi,
                 /(sugiro|proponho|recomendo)/gi,
-                /(diferentemente|ao contrário) de/gi,
-                /(surpreendentemente|curiosamente)/gi
+                /(diferentemente|ao contrário) de/gi
             ];
             
             uniqueIdeas.forEach(pattern => {
                 if (text.match(pattern)) score += 1;
             });
             
-            // Bônus por perguntas retóricas
             const rhetoricalQuestions = (text.match(/\?/g) || []).length;
             score += Math.min(rhetoricalQuestions, 2);
             
@@ -1016,17 +998,14 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
         }
         
         function displayResults(result) {
-            // Mostrar a seção de resultados
             document.getElementById('results').style.display = 'block';
             
-            // Atualizar a barra de probabilidade
             const probabilityFill = document.getElementById('probabilityFill');
             const probabilityText = document.getElementById('probabilityText');
             
             probabilityFill.style.width = `${result.humanProbability}%`;
             probabilityText.textContent = `${result.humanProbability}%`;
             
-            // Ajustar cor baseada na probabilidade
             if (result.humanProbability >= 70) {
                 probabilityFill.style.backgroundColor = 'var(--success)';
             } else if (result.humanProbability >= 40) {
@@ -1035,7 +1014,6 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 probabilityFill.style.backgroundColor = 'var(--danger)';
             }
             
-            // Exibir veredito
             const verdict = document.getElementById('verdict');
             if (result.humanProbability >= 70) {
                 verdict.innerHTML = '<span class="human-indicator">✓ Provável conteúdo humano</span>';
@@ -1045,7 +1023,13 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 verdict.innerHTML = '<span class="ai-indicator">✗ Provável conteúdo de IA</span>';
             }
             
-            // Atualizar detalhes da análise
+            // Atualizar métricas
+            document.getElementById('metricHuman').textContent = `${result.humanProbability}%`;
+            document.getElementById('metricAI').textContent = `${result.aiProbability}%`;
+            document.getElementById('metricWords').textContent = result.wordCount;
+            document.getElementById('metricSentences').textContent = result.sentenceCount;
+            
+            // Atualizar detalhes
             document.getElementById('contentTypeResult').textContent = 
                 document.querySelector(`#contentType option[value="${result.contentType}"]`).textContent;
             document.getElementById('complexityResult').textContent = result.complexity;
@@ -1055,8 +1039,10 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 result.aiPatterns.score > 5 ? 'Alta' : result.aiPatterns.score > 2 ? 'Média' : 'Baixa';
             document.getElementById('humanElementsResult').textContent = 
                 result.humanElements > 3 ? 'Alta' : result.humanElements > 1 ? 'Média' : 'Baixa';
+            document.getElementById('vocabDiversityResult').textContent = 
+                `${Math.round(result.vocabDiversity * 100)}%`;
             
-            // Mostrar padrões de IA detectados se houver
+            // Padrões de IA
             const aiPatternsSection = document.getElementById('aiPatternsSection');
             const aiPatternsList = document.getElementById('aiPatternsList');
             
@@ -1075,7 +1061,7 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 aiPatternsSection.style.display = 'none';
             }
             
-            // Gerar características identificadas
+            // Características
             const featuresList = document.getElementById('featuresList');
             featuresList.innerHTML = '';
             
@@ -1112,7 +1098,7 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 featuresList.appendChild(featureCard);
             });
             
-            // Gerar recomendações
+            // Recomendações
             const recommendations = document.getElementById('recommendations');
             let recHTML = '';
             
@@ -1122,7 +1108,6 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                         <div class="feature-title">Texto Classificado como Humano</div>
                         <div class="feature-desc">
                             O texto apresenta fortes indícios de autoria humana (${result.humanProbability}%).
-                            ${result.contentType === 'academic' ? 'A estrutura acadêmica contribuiu para esta classificação.' : ''}
                         </div>
                     </div>
                 `;
@@ -1142,9 +1127,6 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                         <div class="feature-title">Resultado Inconclusivo</div>
                         <div class="feature-desc">
                             O texto apresenta características mistas (${result.humanProbability}% humano).
-                            ${result.aiPatterns.patterns.length > 0 ? 
-                              `Foram detectados ${result.aiPatterns.patterns.length} padrões de IA.` : 
-                              'Poucos elementos humanos explícitos foram identificados.'}
                         </div>
                     </div>
                 `;
@@ -1164,8 +1146,136 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
             
             recommendations.innerHTML = recHTML;
             
-            // Rolagem suave para os resultados
+            // Prévia do texto
+            document.getElementById('textPreview').textContent = result.analyzedText;
+            
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Gerar PDF
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Data atual
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR');
+            const timeStr = now.toLocaleTimeString('pt-BR');
+            
+            // Cabeçalho
+            doc.setFillColor(41, 128, 185);
+            doc.rect(0, 0, 210, 30, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.text('Relatório de Análise de Conteúdo', 105, 15, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`Gerado em: ${dateStr} às ${timeStr}`, 105, 25, { align: 'center' });
+            
+            let yPosition = 40;
+            
+            // Resultado principal
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(16);
+            doc.text('RESULTADO DA ANÁLISE', 20, yPosition);
+            yPosition += 10;
+            
+            doc.setFontSize(12);
+            const humanProb = currentAnalysisResult.humanProbability;
+            const aiProb = currentAnalysisResult.aiProbability;
+            doc.text(`Probabilidade de Conteúdo Humano: ${humanProb}%`, 20, yPosition);
+            yPosition += 7;
+            doc.text(`Probabilidade de Conteúdo de IA: ${aiProb}%`, 20, yPosition);
+            yPosition += 10;
+            
+            // Veredito
+            let verdict = '';
+            if (humanProb >= 70) verdict = 'PROVÁVEL CONTEÚDO HUMANO';
+            else if (humanProb >= 40) verdict = 'RESULTADO MISTO';
+            else verdict = 'PROVÁVEL CONTEÚDO DE IA';
+            
+            doc.setFontSize(14);
+            doc.text(`Veredito: ${verdict}`, 20, yPosition);
+            yPosition += 15;
+            
+            // Métricas
+            doc.setFontSize(16);
+            doc.text('MÉTRICAS DETALHADAS', 20, yPosition);
+            yPosition += 10;
+            
+            doc.setFontSize(10);
+            const metrics = [
+                `Tipo de Conteúdo: ${document.querySelector(`#contentType option[value="${currentAnalysisResult.contentType}"]`).textContent}`,
+                `Palavras: ${currentAnalysisResult.wordCount}`,
+                `Sentenças: ${currentAnalysisResult.sentenceCount}`,
+                `Parágrafos: ${currentAnalysisResult.paragraphCount}`,
+                `Complexidade: ${currentAnalysisResult.complexity}`,
+                `Coerência: ${currentAnalysisResult.coherence}`,
+                `Originalidade: ${currentAnalysisResult.originality}`,
+                `Elementos Humanos: ${currentAnalysisResult.humanElements > 3 ? 'Alta' : currentAnalysisResult.humanElements > 1 ? 'Média' : 'Baixa'}`,
+                `Padrões de IA: ${currentAnalysisResult.aiPatterns.score > 5 ? 'Alta' : currentAnalysisResult.aiPatterns.score > 2 ? 'Média' : 'Baixa'}`,
+                `Diversidade Vocabular: ${Math.round(currentAnalysisResult.vocabDiversity * 100)}%`
+            ];
+            
+            metrics.forEach(metric => {
+                if (yPosition > 270) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                doc.text(metric, 20, yPosition);
+                yPosition += 6;
+            });
+            
+            yPosition += 10;
+            
+            // Padrões de IA detectados
+            if (currentAnalysisResult.aiPatterns.patterns.length > 0) {
+                if (yPosition > 250) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                
+                doc.setFontSize(16);
+                doc.text('PADRÕES DE IA IDENTIFICADOS', 20, yPosition);
+                yPosition += 10;
+                
+                doc.setFontSize(10);
+                currentAnalysisResult.aiPatterns.patterns.forEach(pattern => {
+                    if (yPosition > 270) {
+                        doc.addPage();
+                        yPosition = 20;
+                    }
+                    doc.text(`• ${pattern}`, 25, yPosition);
+                    yPosition += 6;
+                });
+                
+                yPosition += 10;
+            }
+            
+            // Recomendações
+            if (yPosition > 250) {
+                doc.addPage();
+                yPosition = 20;
+            }
+            
+            doc.setFontSize(16);
+            doc.text('RECOMENDAÇÕES', 20, yPosition);
+            yPosition += 10;
+            
+            doc.setFontSize(10);
+            let recommendationText = '';
+            if (currentAnalysisResult.humanProbability >= 70) {
+                recommendationText = 'O texto apresenta fortes indícios de autoria humana. Continue com o bom trabalho!';
+            } else if (currentAnalysisResult.humanProbability <= 30) {
+                recommendationText = 'Foram detectados padrões típicos de IA. Considere revisar o texto para incluir mais elementos pessoais e originais.';
+            } else {
+                recommendationText = 'O texto apresenta características mistas. Considere adicionar mais elementos humanos para aumentar a autenticidade.';
+            }
+            
+            const splitRecommendations = doc.splitTextToSize(recommendationText, 170);
+            doc.text(splitRecommendations, 20, yPosition);
+            
+            // Salvar PDF
+            doc.save(`relatorio-analise-${dateStr.replace(/\//g, '-')}.pdf`);
         }
     </script>
 </body>
