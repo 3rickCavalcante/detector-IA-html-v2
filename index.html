@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detector de Conteúdo Humano vs IA - Versão Corrigida</title>
+    <title>Detector de Conteúdo Humano vs IA - Versão Final</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -487,7 +487,7 @@
     <header>
         <div class="container">
             <h1>Detector de Conteúdo Humano vs IA</h1>
-            <p class="subtitle">Sistema Corrigido - Detecção Aprimorada e Formatação Preservada</p>
+            <p class="subtitle">Versão Final - Formatação Corrigida e Detecção Balanceada</p>
         </div>
     </header>
     
@@ -666,40 +666,18 @@
             <div class="confidence-note">
                 <strong>Correções Implementadas:</strong> 
                 <ul>
-                    <li><strong>Detecção Aprimorada de IA:</strong> Algoritmo ajustado para identificar padrões específicos de ChatGPT</li>
-                    <li><strong>Formatação Preservada:</strong> Estrutura do texto mantida durante extração de arquivos</li>
-                    <li><strong>Análise Mais Rigorosa:</strong> Penalidades aumentadas para conteúdo genérico e repetitivo</li>
+                    <li><strong>Formatação Preservada:</strong> Texto extraído de PDF mantém parágrafos e estrutura original</li>
+                    <li><strong>Detecção Balanceada:</strong> Algoritmo ajustado para não penalizar conteúdo humano legítimo</li>
+                    <li><strong>Extração Melhorada:</strong> Processamento avançado de PDF com preservação de layout</li>
                 </ul>
-            </div>
-            
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-title">Detecção Aprimorada</div>
-                    <div class="feature-desc">Identifica padrões específicos de ChatGPT e outros modelos de IA.</div>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-title">Formatação Preservada</div>
-                    <div class="feature-desc">Mantém parágrafos, quebras de linha e estrutura do texto original.</div>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-title">Análise Contextual</div>
-                    <div class="feature-desc">Considera o contexto específico de textos acadêmicos e técnicos.</div>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-title">Feedback Detalhado</div>
-                    <div class="feature-desc">Explica os critérios usados para classificar o conteúdo.</div>
-                </div>
             </div>
         </div>
     </div>
     
     <footer>
         <div class="container">
-            <p>Sistema de Detecção de Conteúdo Humano vs IA - Versão Corrigida</p>
-            <p>Detecção aprimorada e formatação preservada</p>
+            <p>Sistema de Detecção de Conteúdo Humano vs IA - Versão Final Corrigida</p>
+            <p>Formatação preservada e detecção balanceada</p>
         </div>
     </footer>
 
@@ -742,7 +720,61 @@
             switchTab('text-tab');
         }
 
-        // Funções de upload e extração REAL com formatação preservada
+        // FUNÇÃO DE EXTRAÇÃO DE PDF CORRIGIDA - FORMATAÇÃO PRESERVADA
+        async function extractTextFromPDF(file) {
+            return new Promise((resolve, reject) => {
+                const fileReader = new FileReader();
+                
+                fileReader.onload = async function() {
+                    try {
+                        const typedArray = new Uint8Array(this.result);
+                        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                        let fullText = '';
+                        
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            
+                            // Processar texto preservando layout
+                            let pageText = '';
+                            let lastY = null;
+                            
+                            for (const item of textContent.items) {
+                                // Verificar se mudou de linha
+                                if (lastY !== null && Math.abs(lastY - item.transform[5]) > 5) {
+                                    pageText += '\n';
+                                }
+                                
+                                pageText += item.str + ' ';
+                                lastY = item.transform[5];
+                            }
+                            
+                            fullText += pageText + '\n\n';
+                        }
+                        
+                        // Limpar e formatar o texto preservando estrutura
+                        fullText = fullText
+                            .replace(/\s+/g, ' ')
+                            .replace(/([.!?])\s+/g, '$1\n')
+                            .replace(/\n\s+/g, '\n')
+                            .replace(/(\n){3,}/g, '\n\n')
+                            .trim();
+                            
+                        resolve(fullText || 'Não foi possível extrair texto do PDF.');
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                fileReader.onerror = function() {
+                    reject(new Error('Erro ao ler arquivo PDF'));
+                };
+                
+                fileReader.readAsArrayBuffer(file);
+            });
+        }
+
+        // Funções de upload e extração
         function handleFileSelect(files) {
             if (files.length > 0) {
                 const file = files[0];
@@ -793,39 +825,6 @@
             }
         }
 
-        async function extractTextFromPDF(file) {
-            return new Promise((resolve, reject) => {
-                const fileReader = new FileReader();
-                
-                fileReader.onload = async function() {
-                    try {
-                        const typedArray = new Uint8Array(this.result);
-                        const pdf = await pdfjsLib.getDocument(typedArray).promise;
-                        let fullText = '';
-                        
-                        for (let i = 1; i <= pdf.numPages; i++) {
-                            const page = await pdf.getPage(i);
-                            const textContent = await page.getTextContent();
-                            const pageText = textContent.items.map(item => item.str).join(' ');
-                            fullText += pageText + '\n\n';
-                        }
-                        
-                        // Preservar formatação básica
-                        fullText = fullText.replace(/\s+/g, ' ').replace(/([.!?])\s+/g, '$1\n').trim();
-                        resolve(fullText || 'Não foi possível extrair texto do PDF.');
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                
-                fileReader.onerror = function() {
-                    reject(new Error('Erro ao ler arquivo PDF'));
-                };
-                
-                fileReader.readAsArrayBuffer(file);
-            });
-        }
-
         async function extractTextFromWord(file) {
             return new Promise((resolve, reject) => {
                 const fileReader = new FileReader();
@@ -836,10 +835,10 @@
                         const result = await mammoth.extractRawText({ arrayBuffer });
                         
                         if (result.value) {
-                            // Preservar quebras de linha e parágrafos
                             let text = result.value;
-                            text = text.replace(/\n\s*\n/g, '\n\n'); // Manter quebras de parágrafo
-                            text = text.replace(/[ ]+/g, ' '); // Remover espaços múltiplos
+                            // Preservar quebras de linha e parágrafos
+                            text = text.replace(/\n\s*\n/g, '\n\n');
+                            text = text.replace(/[ ]+/g, ' ');
                             resolve(text.trim());
                         } else {
                             resolve('Não foi possível extrair texto do documento Word.');
@@ -897,7 +896,7 @@
             });
         });
 
-        // ANÁLISE DE TEXTO CORRIGIDA - DETECÇÃO APRIMORADA DE IA
+        // ANÁLISE DE TEXTO CORRIGIDA - DETECÇÃO BALANCEADA
         document.getElementById('analyzeBtn').addEventListener('click', function() {
             const text = document.getElementById('textInput').value.trim();
             const contentType = document.getElementById('contentType').value;
@@ -921,19 +920,19 @@
         });
         
         function analyzeText(text, contentType) {
-            let humanScore = 40; // Reduzido de 50 para 40 - mais rigoroso
+            let humanScore = 60; // Aumentado para 60 - mais balanceado
             
             const wordCount = text.split(/\s+/).length;
             const sentenceCount = text.split(/[.!?]+/).length - 1;
             const paragraphCount = text.split(/\n\s*\n/).length;
             
-            // DETECÇÃO FORTALECIDA DE PADRÕES DE IA
+            // DETECÇÃO BALANCEADA DE PADRÕES DE IA
             const aiPatterns = detectAIPatterns(text);
-            humanScore -= aiPatterns.score * 4; // Aumentado de 3 para 4
+            humanScore -= aiPatterns.score * 2; // Reduzido de 4 para 2
             
-            // Elementos humanos - mais criterioso
+            // Elementos humanos - mais equilibrado
             const humanElements = detectHumanElements(text);
-            humanScore += humanElements * 3; // Reduzido de 4 para 3
+            humanScore += humanElements * 4; // Mantido em 4
             
             const structureAnalysis = analyzeStructureAndComplexity(text);
             humanScore += structureAnalysis.score;
@@ -941,19 +940,23 @@
             let academicBonus = 0;
             if (contentType === 'academic') {
                 const academicElements = detectAcademicElements(text);
-                academicBonus = academicElements * 2; // Reduzido de 3 para 2
+                academicBonus = academicElements * 3; // Aumentado para 3
                 humanScore += academicBonus;
             }
             
             const originalityScore = analyzeOriginality(text);
             humanScore += originalityScore;
             
-            // Penalidade adicional para textos muito genéricos
+            // Penalidade reduzida para textos genéricos
             const genericPenalty = detectGenericContent(text);
             humanScore -= genericPenalty;
             
             const contentAdjustment = getContentTypeAdjustment(contentType, text);
             humanScore += contentAdjustment;
+            
+            // BÔNUS PARA TEXTOS BEM ESTRUTURADOS (comuns em humanos)
+            const structureBonus = analyzeHumanStructure(text);
+            humanScore += structureBonus;
             
             humanScore = Math.max(5, Math.min(95, humanScore));
             
@@ -970,6 +973,7 @@
                 academicBonus: academicBonus,
                 originalityScore: originalityScore,
                 genericPenalty: genericPenalty,
+                structureBonus: structureBonus,
                 complexity: structureAnalysis.complexity,
                 coherence: structureAnalysis.coherence,
                 originality: originalityScore > 3 ? 'Alta' : originalityScore > 1 ? 'Média' : 'Baixa',
@@ -978,10 +982,32 @@
             };
         }
         
+        function analyzeHumanStructure(text) {
+            let bonus = 0;
+            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+            
+            // Bônus para variação no comprimento das frases (comum em humanos)
+            if (sentences.length > 5) {
+                const lengths = sentences.map(s => s.split(/\s+/).length);
+                const avgLength = lengths.reduce((a, b) => a + b) / lengths.length;
+                const variance = lengths.reduce((a, b) => a + Math.pow(b - avgLength, 2), 0) / lengths.length;
+                
+                if (variance > 15) bonus += 3; // Variação alta indica estilo humano
+            }
+            
+            // Bônus para uso de parágrafos bem estruturados
+            const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+            if (paragraphs.length > 2) {
+                bonus += 2;
+            }
+            
+            return bonus;
+        }
+        
         function detectAIPatterns(text) {
-            // PADRÕES ESPECÍFICOS DE CHATGPT E OUTRAS IAs
+            // PADRÕES ESPECÍFICOS DE IA - MAIS SELETIVOS
             const patterns = {
-                // Padrões muito específicos de IA - EXPANDIDOS
+                // Padrões muito específicos de IA
                 explicitAI: [
                     /como um (modelo de )?IA/gi,
                     /como uma inteligência artificial/gi,
@@ -989,119 +1015,43 @@
                     /baseado (exclusivamente|apenas) no meu treinamento/gi,
                     /como (um|uma) (assistente|modelo) de linguagem/gi,
                     /minhas respostas são baseadas/gi,
-                    /fui treinado|fui programado/gi,
+                    /fui treinado|fui programado/gi
+                ],
+                
+                // Padrões genéricos - APENAS OS MAIS ÓBVIOS
+                genericPhrases: [
                     /como um grande modelo de linguagem/gi,
                     /devo (informar|esclarecer) que/gi,
-                    /é importante (observar|ressaltar|destacar|notar) que/gi
-                ],
-                
-                // Padrões genéricos muito comuns em IA - EXPANDIDOS
-                genericPhrases: [
-                    /é importante (ressaltar|destacar|notar)/gi,
-                    /vale (ressaltar|destacar|mencionar)/gi,
-                    /além disso,/gi,
-                    /dessa forma,/gi,
-                    /em resumo,/gi,
-                    /em síntese,/gi,
-                    /em conclusão,/gi,
-                    /por outro lado,/gi,
-                    /é fundamental (entender|compreender)/gi,
-                    /é crucial (considerar|notar)/gi,
-                    /é essencial (mencionar|destacar)/gi,
-                    /constitui-se como/gi,
-                    /configura-se como/gi,
-                    /pode-se afirmar que/gi,
-                    /cabe destacar que/gi,
-                    /convém mencionar que/gi,
-                    /importa salientar que/gi,
-                    /destaca-se que/gi,
-                    /observa-se que/gi,
-                    /verifica-se que/gi,
-                    /constata-se que/gi,
-                    /evidencia-se que/gi,
-                    /salienta-se que/gi
-                ],
-                
-                // Estruturas repetitivas típicas de IA
-                repetitiveStructures: [
-                    /\.\s*Além disso,\s*[A-Z]/g,
-                    /\.\s*É importante\s*[A-Z]/g,
-                    /\.\s*Vale ressaltar\s*[A-Z]/g,
-                    /\.\s*Portanto,\s*[A-Z]/g,
-                    /\.\s*Dessa forma,\s*[A-Z]/g,
-                    /\.\s*Conclui-se que\s*[A-Z]/g
-                ],
-                
-                // Padrões específicos de ChatGPT em textos acadêmicos
-                academicAIPatterns: [
-                    /este (artigo|estudo|trabalho) tem como objetivo/gi,
-                    /a fundamentação teórica ancora-se em/gi,
-                    /conclui-se que/gi,
-                    /palavras-chave:/gi,
-                    /abstract/gi,
-                    /resumo/gi,
-                    /considerações finais/gi,
-                    /discussão/gi,
-                    /resultados/gi,
-                    /metodologia/gi,
-                    /referências/gi
+                    /não possuo (consciência|experiências)/gi
                 ]
             };
             
             let score = 0;
             const detectedPatterns = [];
             
-            // Verificar padrões explícitos de IA
+            // Verificar apenas padrões explícitos de IA
             patterns.explicitAI.forEach((pattern) => {
                 const matches = text.match(pattern);
                 if (matches) {
-                    score += matches.length * 4; // Aumentado de 3 para 4
+                    score += matches.length * 3;
                     detectedPatterns.push(`Padrão explícito de IA: "${matches[0]}"`);
                 }
             });
             
-            // Verificar frases genéricas (limitar o impacto)
+            // Verificar frases genéricas apenas se forem MUITO frequentes
             let genericCount = 0;
             patterns.genericPhrases.forEach(pattern => {
                 const matches = text.match(pattern);
                 if (matches) genericCount += matches.length;
             });
             
-            if (genericCount > 1) { // Reduzido de 2 para 1
-                score += Math.min(genericCount * 2, 10); // Penalidade aumentada
+            if (genericCount > 3) {
+                score += Math.min(genericCount - 3, 5);
                 detectedPatterns.push(`${genericCount} frases genéricas típicas de IA`);
             }
             
-            // Verificar estruturas repetitivas
-            patterns.repetitiveStructures.forEach(pattern => {
-                const matches = text.match(pattern);
-                if (matches && matches.length > 1) {
-                    score += matches.length * 3; // Aumentado de 2 para 3
-                    detectedPatterns.push(`Estrutura repetitiva: ${matches.length} padrões similares`);
-                }
-            });
-            
-            // Verificar padrões acadêmicos de IA (apenas penalizar se muitos)
-            let academicAICount = 0;
-            patterns.academicAIPatterns.forEach(pattern => {
-                const matches = text.match(pattern);
-                if (matches) academicAICount += matches.length;
-            });
-            
-            if (academicAICount > 3) {
-                score += Math.min(academicAICount - 3, 5);
-                detectedPatterns.push(`${academicAICount} elementos de estrutura acadêmica genérica`);
-            }
-            
-            // Penalidade por falta de diversidade vocabular
-            const vocabDiversity = calculateVocabDiversity(text);
-            if (vocabDiversity < 0.5) { // Aumentado de 0.4 para 0.5
-                score += 4; // Aumentado de 3 para 4
-                detectedPatterns.push(`Baixa diversidade vocabular (${Math.round(vocabDiversity * 100)}%)`);
-            }
-            
             return {
-                score: Math.min(score, 20), // Aumentado de 15 para 20
+                score: Math.min(score, 10), // Reduzido de 20 para 10
                 patterns: detectedPatterns
             };
         }
@@ -1109,28 +1059,7 @@
         function detectGenericContent(text) {
             let penalty = 0;
             
-            // Penalizar textos muito estruturados e previsíveis
-            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
-            let similarStartCount = 0;
-            
-            if (sentences.length > 5) {
-                const startingWords = sentences.map(s => s.trim().split(/\s+/).slice(0, 3).join(' ').toLowerCase());
-                const wordCounts = {};
-                
-                startingWords.forEach(words => {
-                    wordCounts[words] = (wordCounts[words] || 0) + 1;
-                });
-                
-                Object.values(wordCounts).forEach(count => {
-                    if (count > 2) {
-                        similarStartCount += count - 1;
-                    }
-                });
-            }
-            
-            penalty += Math.min(similarStartCount, 5);
-            
-            // Penalizar repetição excessiva de termos
+            // Apenas penalizar repetição EXTREMA
             const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 4);
             const wordFreq = {};
             words.forEach(word => {
@@ -1139,12 +1068,12 @@
             
             let repeatedTerms = 0;
             Object.values(wordFreq).forEach(freq => {
-                if (freq > 5) {
-                    repeatedTerms += freq - 5;
+                if (freq > 8) { // Aumentado de 5 para 8
+                    repeatedTerms += freq - 8;
                 }
             });
             
-            penalty += Math.min(repeatedTerms / 2, 5);
+            penalty += Math.min(repeatedTerms / 3, 3); // Reduzida penalidade
             
             return penalty;
         }
@@ -1156,7 +1085,7 @@
         }
         
         function detectHumanElements(text) {
-            // Elementos que comprovam autoria humana - MAIS RIGOROSOS
+            // Elementos que comprovam autoria humana - EXPANDIDOS
             const humanIndicators = [
                 /expressões? idiomáticas?/gi,
                 /metáforas?/gi,
@@ -1176,7 +1105,10 @@
                 /acho interessante/gi,
                 /me chamou a atenção/gi,
                 /surpreendentemente/gi,
-                /curiosamente/gi
+                /curiosamente/gi,
+                /particularmente/gi,
+                /efetivamente/gi,
+                /concretamente/gi
             ];
             
             let humanCount = 0;
@@ -1185,7 +1117,7 @@
                 if (matches) humanCount += matches.length;
             });
             
-            return Math.min(humanCount, 8);
+            return Math.min(humanCount, 10); // Aumentado de 8 para 10
         }
         
         function analyzeStructureAndComplexity(text) {
@@ -1196,17 +1128,17 @@
             let complexSentences = 0;
             sentences.forEach(sentence => {
                 const words = sentence.trim().split(/\s+/);
-                if (words.length > 18 && 
+                if (words.length > 15 && // Reduzido de 18 para 15
                    (sentence.includes(',') || sentence.includes(';'))) {
                     complexSentences++;
                 }
             });
             
-            score += Math.min(complexSentences, 4);
+            score += Math.min(complexSentences, 5); // Aumentado de 4 para 5
             
             return {
                 score: score,
-                complexity: avgSentenceLength > 20 ? 'Alta' : avgSentenceLength > 12 ? 'Média' : 'Baixa',
+                complexity: avgSentenceLength > 18 ? 'Alta' : avgSentenceLength > 10 ? 'Média' : 'Baixa', // Ajustado
                 coherence: score > 3 ? 'Alta' : score > 1 ? 'Média' : 'Baixa'
             };
         }
@@ -1251,25 +1183,25 @@
             });
             
             const rhetoricalQuestions = (text.match(/\?/g) || []).length;
-            score += Math.min(rhetoricalQuestions, 2);
+            score += Math.min(rhetoricalQuestions, 3); // Aumentado de 2 para 3
             
             return score;
         }
         
         function getContentTypeAdjustment(contentType, text) {
             const adjustments = {
-                'academic': 1,  // Reduzido de 2 para 1
-                'creative': 3,
-                'journalistic': 1,
-                'technical': 1,  // Reduzido de 2 para 1
-                'conversational': -2, // Aumentada penalidade
-                'general': 0
+                'academic': 3,  // Aumentado para 3
+                'creative': 4,  // Aumentado para 4
+                'journalistic': 2,
+                'technical': 2,  // Aumentado para 2
+                'conversational': 0, // Removida penalidade
+                'general': 1
             };
             
             return adjustments[contentType] || 0;
         }
-        
-        // ... (restante das funções displayResults e generatePDF mantidas iguais)
+
+        // ... (restante das funções displayResults e generatePDF mantidas)
         function displayResults(result) {
             document.getElementById('results').style.display = 'block';
             
