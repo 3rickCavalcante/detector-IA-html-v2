@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -441,6 +441,19 @@
             display: none;
         }
         
+        .suggestions-list {
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--secondary);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .suggestion-item {
+            margin-bottom: 0.5rem;
+            padding-left: 1rem;
+        }
+        
         footer {
             text-align: center;
             margin-top: 2rem;
@@ -487,7 +500,7 @@
     <header>
         <div class="container">
             <h1>Detector de Conteúdo Humano vs IA</h1>
-            <p class="subtitle">Versão Final - Formatação Corrigida e Detecção Balanceada</p>
+            <p class="subtitle">Versão Final - Detecção Aprimorada e Relatório Completo</p>
         </div>
     </header>
     
@@ -638,17 +651,19 @@
                     </div>
                 </div>
                 
-                <div class="report-section">
-                    <h2 class="report-title">Características do Texto</h2>
-                    <div id="featuresList" class="features-grid">
-                        <!-- Características serão inseridas aqui -->
+                <div id="suggestionsSection" class="report-section" style="display: none;">
+                    <h2 class="report-title">Sugestões para Humanizar o Texto</h2>
+                    <div class="suggestions-list">
+                        <div id="suggestionsList">
+                            <!-- Sugestões serão inseridas aqui -->
+                        </div>
                     </div>
                 </div>
                 
                 <div class="report-section">
-                    <h2 class="report-title">Recomendações</h2>
-                    <div id="recommendations">
-                        <!-- Recomendações serão inseridas aqui -->
+                    <h2 class="report-title">Características do Texto</h2>
+                    <div id="featuresList" class="features-grid">
+                        <!-- Características serão inseridas aqui -->
                     </div>
                 </div>
                 
@@ -660,24 +675,12 @@
                 </div>
             </div>
         </div>
-        
-        <div class="card">
-            <h2 class="card-title">Sobre o Sistema Corrigido</h2>
-            <div class="confidence-note">
-                <strong>Correções Implementadas:</strong> 
-                <ul>
-                    <li><strong>Formatação Preservada:</strong> Texto extraído de PDF mantém parágrafos e estrutura original</li>
-                    <li><strong>Detecção Balanceada:</strong> Algoritmo ajustado para não penalizar conteúdo humano legítimo</li>
-                    <li><strong>Extração Melhorada:</strong> Processamento avançado de PDF com preservação de layout</li>
-                </ul>
-            </div>
-        </div>
     </div>
     
     <footer>
         <div class="container">
-            <p>Sistema de Detecção de Conteúdo Humano vs IA - Versão Final Corrigida</p>
-            <p>Formatação preservada e detecção balanceada</p>
+            <p>Sistema de Detecção de Conteúdo Humano vs IA - Versão Final</p>
+            <p>Detecção aprimorada e relatório completo com sugestões</p>
         </div>
     </footer>
 
@@ -720,61 +723,7 @@
             switchTab('text-tab');
         }
 
-        // FUNÇÃO DE EXTRAÇÃO DE PDF CORRIGIDA - FORMATAÇÃO PRESERVADA
-        async function extractTextFromPDF(file) {
-            return new Promise((resolve, reject) => {
-                const fileReader = new FileReader();
-                
-                fileReader.onload = async function() {
-                    try {
-                        const typedArray = new Uint8Array(this.result);
-                        const pdf = await pdfjsLib.getDocument(typedArray).promise;
-                        let fullText = '';
-                        
-                        for (let i = 1; i <= pdf.numPages; i++) {
-                            const page = await pdf.getPage(i);
-                            const textContent = await page.getTextContent();
-                            
-                            // Processar texto preservando layout
-                            let pageText = '';
-                            let lastY = null;
-                            
-                            for (const item of textContent.items) {
-                                // Verificar se mudou de linha
-                                if (lastY !== null && Math.abs(lastY - item.transform[5]) > 5) {
-                                    pageText += '\n';
-                                }
-                                
-                                pageText += item.str + ' ';
-                                lastY = item.transform[5];
-                            }
-                            
-                            fullText += pageText + '\n\n';
-                        }
-                        
-                        // Limpar e formatar o texto preservando estrutura
-                        fullText = fullText
-                            .replace(/\s+/g, ' ')
-                            .replace(/([.!?])\s+/g, '$1\n')
-                            .replace(/\n\s+/g, '\n')
-                            .replace(/(\n){3,}/g, '\n\n')
-                            .trim();
-                            
-                        resolve(fullText || 'Não foi possível extrair texto do PDF.');
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                
-                fileReader.onerror = function() {
-                    reject(new Error('Erro ao ler arquivo PDF'));
-                };
-                
-                fileReader.readAsArrayBuffer(file);
-            });
-        }
-
-        // Funções de upload e extração
+        // Funções de upload e extração (mantidas da versão anterior)
         function handleFileSelect(files) {
             if (files.length > 0) {
                 const file = files[0];
@@ -825,6 +774,56 @@
             }
         }
 
+        async function extractTextFromPDF(file) {
+            return new Promise((resolve, reject) => {
+                const fileReader = new FileReader();
+                
+                fileReader.onload = async function() {
+                    try {
+                        const typedArray = new Uint8Array(this.result);
+                        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                        let fullText = '';
+                        
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const textContent = await page.getTextContent();
+                            
+                            let pageText = '';
+                            let lastY = null;
+                            
+                            for (const item of textContent.items) {
+                                if (lastY !== null && Math.abs(lastY - item.transform[5]) > 5) {
+                                    pageText += '\n';
+                                }
+                                
+                                pageText += item.str + ' ';
+                                lastY = item.transform[5];
+                            }
+                            
+                            fullText += pageText + '\n\n';
+                        }
+                        
+                        fullText = fullText
+                            .replace(/\s+/g, ' ')
+                            .replace(/([.!?])\s+/g, '$1\n')
+                            .replace(/\n\s+/g, '\n')
+                            .replace(/(\n){3,}/g, '\n\n')
+                            .trim();
+                            
+                        resolve(fullText || 'Não foi possível extrair texto do PDF.');
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                fileReader.onerror = function() {
+                    reject(new Error('Erro ao ler arquivo PDF'));
+                };
+                
+                fileReader.readAsArrayBuffer(file);
+            });
+        }
+
         async function extractTextFromWord(file) {
             return new Promise((resolve, reject) => {
                 const fileReader = new FileReader();
@@ -836,7 +835,6 @@
                         
                         if (result.value) {
                             let text = result.value;
-                            // Preservar quebras de linha e parágrafos
                             text = text.replace(/\n\s*\n/g, '\n\n');
                             text = text.replace(/[ ]+/g, ' ');
                             resolve(text.trim());
@@ -896,7 +894,7 @@
             });
         });
 
-        // ANÁLISE DE TEXTO CORRIGIDA - DETECÇÃO BALANCEADA
+        // ANÁLISE DE TEXTO CORRIGIDA - DETECÇÃO FORTALECIDA DE IA
         document.getElementById('analyzeBtn').addEventListener('click', function() {
             const text = document.getElementById('textInput').value.trim();
             const contentType = document.getElementById('contentType').value;
@@ -920,19 +918,19 @@
         });
         
         function analyzeText(text, contentType) {
-            let humanScore = 60; // Aumentado para 60 - mais balanceado
+            let humanScore = 50; // Ponto médio
             
             const wordCount = text.split(/\s+/).length;
             const sentenceCount = text.split(/[.!?]+/).length - 1;
             const paragraphCount = text.split(/\n\s*\n/).length;
             
-            // DETECÇÃO BALANCEADA DE PADRÕES DE IA
+            // DETECÇÃO FORTALECIDA DE PADRÕES DE IA
             const aiPatterns = detectAIPatterns(text);
-            humanScore -= aiPatterns.score * 2; // Reduzido de 4 para 2
+            humanScore -= aiPatterns.score * 3; // Penalidade aumentada
             
-            // Elementos humanos - mais equilibrado
+            // Elementos humanos
             const humanElements = detectHumanElements(text);
-            humanScore += humanElements * 4; // Mantido em 4
+            humanScore += humanElements * 4;
             
             const structureAnalysis = analyzeStructureAndComplexity(text);
             humanScore += structureAnalysis.score;
@@ -940,25 +938,28 @@
             let academicBonus = 0;
             if (contentType === 'academic') {
                 const academicElements = detectAcademicElements(text);
-                academicBonus = academicElements * 3; // Aumentado para 3
+                academicBonus = academicElements * 2;
                 humanScore += academicBonus;
             }
             
             const originalityScore = analyzeOriginality(text);
             humanScore += originalityScore;
             
-            // Penalidade reduzida para textos genéricos
+            // Penalidade para textos genéricos
             const genericPenalty = detectGenericContent(text);
             humanScore -= genericPenalty;
             
             const contentAdjustment = getContentTypeAdjustment(contentType, text);
             humanScore += contentAdjustment;
             
-            // BÔNUS PARA TEXTOS BEM ESTRUTURADOS (comuns em humanos)
+            // Bônus reduzido para estrutura humana
             const structureBonus = analyzeHumanStructure(text);
             humanScore += structureBonus;
             
             humanScore = Math.max(5, Math.min(95, humanScore));
+            
+            // Gerar sugestões específicas
+            const suggestions = generateSuggestions(aiPatterns.patterns, text);
             
             return {
                 humanProbability: Math.round(humanScore),
@@ -978,34 +979,13 @@
                 coherence: structureAnalysis.coherence,
                 originality: originalityScore > 3 ? 'Alta' : originalityScore > 1 ? 'Média' : 'Baixa',
                 vocabDiversity: calculateVocabDiversity(text),
-                analyzedText: text.substring(0, 1000) + (text.length > 1000 ? "..." : "")
+                analyzedText: text.substring(0, 1000) + (text.length > 1000 ? "..." : ""),
+                suggestions: suggestions
             };
         }
         
-        function analyzeHumanStructure(text) {
-            let bonus = 0;
-            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
-            
-            // Bônus para variação no comprimento das frases (comum em humanos)
-            if (sentences.length > 5) {
-                const lengths = sentences.map(s => s.split(/\s+/).length);
-                const avgLength = lengths.reduce((a, b) => a + b) / lengths.length;
-                const variance = lengths.reduce((a, b) => a + Math.pow(b - avgLength, 2), 0) / lengths.length;
-                
-                if (variance > 15) bonus += 3; // Variação alta indica estilo humano
-            }
-            
-            // Bônus para uso de parágrafos bem estruturados
-            const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-            if (paragraphs.length > 2) {
-                bonus += 2;
-            }
-            
-            return bonus;
-        }
-        
         function detectAIPatterns(text) {
-            // PADRÕES ESPECÍFICOS DE IA - MAIS SELETIVOS
+            // PADRÕES ESPECÍFICOS DE CHATGPT E OUTRAS IAs - EXPANDIDOS
             const patterns = {
                 // Padrões muito específicos de IA
                 explicitAI: [
@@ -1018,62 +998,185 @@
                     /fui treinado|fui programado/gi
                 ],
                 
-                // Padrões genéricos - APENAS OS MAIS ÓBVIOS
+                // Padrões genéricos muito comuns em IA - EXPANDIDOS
                 genericPhrases: [
-                    /como um grande modelo de linguagem/gi,
-                    /devo (informar|esclarecer) que/gi,
-                    /não possuo (consciência|experiências)/gi
+                    /é importante (ressaltar|destacar|notar)/gi,
+                    /vale (ressaltar|destacar|mencionar)/gi,
+                    /além disso,/gi,
+                    /dessa forma,/gi,
+                    /em resumo,/gi,
+                    /em síntese,/gi,
+                    /em conclusão,/gi,
+                    /por outro lado,/gi,
+                    /é fundamental (entender|compreender)/gi,
+                    /é crucial (considerar|notar)/gi,
+                    /é essencial (mencionar|destacar)/gi,
+                    /constitui-se como/gi,
+                    /configura-se como/gi,
+                    /pode-se afirmar que/gi,
+                    /cabe destacar que/gi,
+                    /convém mencionar que/gi,
+                    /importa salientar que/gi,
+                    /destaca-se que/gi,
+                    /observa-se que/gi,
+                    /verifica-se que/gi,
+                    /constata-se que/gi,
+                    /evidencia-se que/gi,
+                    /salienta-se que/gi,
+                    /conclui-se que/gi,
+                    /infere-se que/gi,
+                    /depreende-se que/gi
+                ],
+                
+                // Estruturas repetitivas típicas de IA
+                repetitiveStructures: [
+                    /\.\s*Além disso,\s*[A-Z]/g,
+                    /\.\s*É importante\s*[A-Z]/g,
+                    /\.\s*Vale ressaltar\s*[A-Z]/g,
+                    /\.\s*Portanto,\s*[A-Z]/g,
+                    /\.\s*Dessa forma,\s*[A-Z]/g,
+                    /\.\s*Conclui-se que\s*[A-Z]/g,
+                    /\.\s*Cabe destacar que\s*[A-Z]/g
+                ],
+                
+                // Padrões específicos de ChatGPT em textos acadêmicos
+                academicAIPatterns: [
+                    /este (artigo|estudo|trabalho) tem como objetivo/gi,
+                    /a fundamentação teórica ancora-se em/gi,
+                    /conclui-se que/gi,
+                    /palavras-chave:/gi,
+                    /abstract/gi,
+                    /resumo/gi,
+                    /considerações finais/gi,
+                    /discussão/gi,
+                    /resultados/gi,
+                    /metodologia/gi,
+                    /referências/gi,
+                    /[A-ZÀ-Ú]{2,},\s*[A-Z][a-zà-ú]+/g, // Padrão de citações: SOARES, Magda
+                    /\([A-ZÀ-Ú]{2,},\s*\d{4}\)/g // Padrão: (SOARES, 2016)
                 ]
             };
             
             let score = 0;
             const detectedPatterns = [];
             
-            // Verificar apenas padrões explícitos de IA
+            // Verificar padrões explícitos de IA
             patterns.explicitAI.forEach((pattern) => {
                 const matches = text.match(pattern);
                 if (matches) {
-                    score += matches.length * 3;
+                    score += matches.length * 4;
                     detectedPatterns.push(`Padrão explícito de IA: "${matches[0]}"`);
                 }
             });
             
-            // Verificar frases genéricas apenas se forem MUITO frequentes
+            // Verificar frases genéricas
             let genericCount = 0;
             patterns.genericPhrases.forEach(pattern => {
                 const matches = text.match(pattern);
                 if (matches) genericCount += matches.length;
             });
             
-            if (genericCount > 3) {
-                score += Math.min(genericCount - 3, 5);
+            if (genericCount > 2) {
+                score += Math.min(genericCount * 2, 15);
                 detectedPatterns.push(`${genericCount} frases genéricas típicas de IA`);
             }
             
+            // Verificar estruturas repetitivas
+            patterns.repetitiveStructures.forEach(pattern => {
+                const matches = text.match(pattern);
+                if (matches && matches.length > 1) {
+                    score += matches.length * 3;
+                    detectedPatterns.push(`Estrutura repetitiva: ${matches.length} padrões similares`);
+                }
+            });
+            
+            // Verificar padrões acadêmicos de IA
+            let academicAICount = 0;
+            patterns.academicAIPatterns.forEach(pattern => {
+                const matches = text.match(pattern);
+                if (matches) academicAICount += matches.length;
+            });
+            
+            if (academicAICount > 5) {
+                score += Math.min(academicAICount - 3, 10);
+                detectedPatterns.push(`${academicAICount} elementos de estrutura acadêmica genérica`);
+            }
+            
+            // Penalidade por falta de diversidade vocabular
+            const vocabDiversity = calculateVocabDiversity(text);
+            if (vocabDiversity < 0.5) {
+                score += 5;
+                detectedPatterns.push(`Baixa diversidade vocabular (${Math.round(vocabDiversity * 100)}%)`);
+            }
+            
             return {
-                score: Math.min(score, 10), // Reduzido de 20 para 10
+                score: Math.min(score, 25),
                 patterns: detectedPatterns
             };
+        }
+        
+        function generateSuggestions(aiPatterns, text) {
+            const suggestions = [];
+            
+            // Sugestões baseadas nos padrões detectados
+            if (aiPatterns.some(p => p.includes('frases genéricas'))) {
+                suggestions.push("Substitua frases genéricas como 'é importante destacar' por opiniões pessoais como 'considero fundamental'");
+            }
+            
+            if (aiPatterns.some(p => p.includes('estrutura repetitiva'))) {
+                suggestions.push("Varie o início das frases para evitar padrões repetitivos");
+            }
+            
+            if (aiPatterns.some(p => p.includes('elementos de estrutura acadêmica genérica'))) {
+                suggestions.push("Personalize a estrutura acadêmica com insights pessoais e experiências únicas");
+            }
+            
+            if (aiPatterns.some(p => p.includes('diversidade vocabular'))) {
+                suggestions.push("Use sinônimos e varie o vocabulário para enriquecer o texto");
+            }
+            
+            // Sugestões gerais
+            if (!text.match(/(acredito|penso|considero|acho)/gi)) {
+                suggestions.push("Inclua opiniões pessoais usando expressões como 'acredito que', 'na minha perspectiva'");
+            }
+            
+            if (!text.match(/(experiência|vivência|prática)/gi)) {
+                suggestions.push("Adicione exemplos baseados em experiências pessoais ou casos reais");
+            }
+            
+            if (!text.match(/(humor|ironia|sarcasmo)/gi)) {
+                suggestions.push("Considere incluir um toque de humor ou ironia quando apropriado");
+            }
+            
+            if (!text.match(/\?/g)) {
+                suggestions.push("Inclua perguntas retóricas para engajar o leitor");
+            }
+            
+            return suggestions;
         }
         
         function detectGenericContent(text) {
             let penalty = 0;
             
-            // Apenas penalizar repetição EXTREMA
-            const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 4);
-            const wordFreq = {};
-            words.forEach(word => {
-                wordFreq[word] = (wordFreq[word] || 0) + 1;
-            });
+            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+            let similarStartCount = 0;
             
-            let repeatedTerms = 0;
-            Object.values(wordFreq).forEach(freq => {
-                if (freq > 8) { // Aumentado de 5 para 8
-                    repeatedTerms += freq - 8;
-                }
-            });
+            if (sentences.length > 5) {
+                const startingWords = sentences.map(s => s.trim().split(/\s+/).slice(0, 3).join(' ').toLowerCase());
+                const wordCounts = {};
+                
+                startingWords.forEach(words => {
+                    wordCounts[words] = (wordCounts[words] || 0) + 1;
+                });
+                
+                Object.values(wordCounts).forEach(count => {
+                    if (count > 2) {
+                        similarStartCount += count - 1;
+                    }
+                });
+            }
             
-            penalty += Math.min(repeatedTerms / 3, 3); // Reduzida penalidade
+            penalty += Math.min(similarStartCount, 5);
             
             return penalty;
         }
@@ -1085,7 +1188,6 @@
         }
         
         function detectHumanElements(text) {
-            // Elementos que comprovam autoria humana - EXPANDIDOS
             const humanIndicators = [
                 /expressões? idiomáticas?/gi,
                 /metáforas?/gi,
@@ -1105,10 +1207,7 @@
                 /acho interessante/gi,
                 /me chamou a atenção/gi,
                 /surpreendentemente/gi,
-                /curiosamente/gi,
-                /particularmente/gi,
-                /efetivamente/gi,
-                /concretamente/gi
+                /curiosamente/gi
             ];
             
             let humanCount = 0;
@@ -1117,7 +1216,7 @@
                 if (matches) humanCount += matches.length;
             });
             
-            return Math.min(humanCount, 10); // Aumentado de 8 para 10
+            return Math.min(humanCount, 8);
         }
         
         function analyzeStructureAndComplexity(text) {
@@ -1128,19 +1227,34 @@
             let complexSentences = 0;
             sentences.forEach(sentence => {
                 const words = sentence.trim().split(/\s+/);
-                if (words.length > 15 && // Reduzido de 18 para 15
+                if (words.length > 18 && 
                    (sentence.includes(',') || sentence.includes(';'))) {
                     complexSentences++;
                 }
             });
             
-            score += Math.min(complexSentences, 5); // Aumentado de 4 para 5
+            score += Math.min(complexSentences, 4);
             
             return {
                 score: score,
-                complexity: avgSentenceLength > 18 ? 'Alta' : avgSentenceLength > 10 ? 'Média' : 'Baixa', // Ajustado
+                complexity: avgSentenceLength > 20 ? 'Alta' : avgSentenceLength > 12 ? 'Média' : 'Baixa',
                 coherence: score > 3 ? 'Alta' : score > 1 ? 'Média' : 'Baixa'
             };
+        }
+        
+        function analyzeHumanStructure(text) {
+            let bonus = 0;
+            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+            
+            if (sentences.length > 5) {
+                const lengths = sentences.map(s => s.split(/\s+/).length);
+                const avgLength = lengths.reduce((a, b) => a + b) / lengths.length;
+                const variance = lengths.reduce((a, b) => a + Math.pow(b - avgLength, 2), 0) / lengths.length;
+                
+                if (variance > 15) bonus += 2;
+            }
+            
+            return bonus;
         }
         
         function detectAcademicElements(text) {
@@ -1174,8 +1288,7 @@
                 /(inovador|original|criativo)/gi,
                 /(sugiro|proponho|recomendo)/gi,
                 /(diferentemente|ao contrário) de/gi,
-                /(surpreendentemente|curiosamente)/gi,
-                /(interessantemente|notavelmente)/gi
+                /(surpreendentemente|curiosamente)/gi
             ];
             
             uniqueIdeas.forEach(pattern => {
@@ -1183,25 +1296,24 @@
             });
             
             const rhetoricalQuestions = (text.match(/\?/g) || []).length;
-            score += Math.min(rhetoricalQuestions, 3); // Aumentado de 2 para 3
+            score += Math.min(rhetoricalQuestions, 2);
             
             return score;
         }
         
         function getContentTypeAdjustment(contentType, text) {
             const adjustments = {
-                'academic': 3,  // Aumentado para 3
-                'creative': 4,  // Aumentado para 4
-                'journalistic': 2,
-                'technical': 2,  // Aumentado para 2
-                'conversational': 0, // Removida penalidade
-                'general': 1
+                'academic': 2,
+                'creative': 3,
+                'journalistic': 1,
+                'technical': 2,
+                'conversational': 0,
+                'general': 0
             };
             
             return adjustments[contentType] || 0;
         }
 
-        // ... (restante das funções displayResults e generatePDF mantidas)
         function displayResults(result) {
             document.getElementById('results').style.display = 'block';
             
@@ -1266,6 +1378,24 @@
                 aiPatternsSection.style.display = 'none';
             }
             
+            // Sugestões
+            const suggestionsSection = document.getElementById('suggestionsSection');
+            const suggestionsList = document.getElementById('suggestionsList');
+            
+            if (result.suggestions.length > 0) {
+                suggestionsSection.style.display = 'block';
+                suggestionsList.innerHTML = '';
+                
+                result.suggestions.forEach(suggestion => {
+                    const suggestionItem = document.createElement('div');
+                    suggestionItem.className = 'suggestion-item';
+                    suggestionItem.textContent = `• ${suggestion}`;
+                    suggestionsList.appendChild(suggestionItem);
+                });
+            } else {
+                suggestionsSection.style.display = 'none';
+            }
+            
             // Características
             const featuresList = document.getElementById('featuresList');
             featuresList.innerHTML = '';
@@ -1303,60 +1433,13 @@
                 featuresList.appendChild(featureCard);
             });
             
-            // Recomendações
-            const recommendations = document.getElementById('recommendations');
-            let recHTML = '';
-            
-            if (result.humanProbability >= 70) {
-                recHTML += `
-                    <div class="feature-card">
-                        <div class="feature-title">Texto Classificado como Humano</div>
-                        <div class="feature-desc">
-                            O texto apresenta fortes indícios de autoria humana (${result.humanProbability}%).
-                        </div>
-                    </div>
-                `;
-            } else if (result.humanProbability <= 30) {
-                recHTML += `
-                    <div class="feature-card">
-                        <div class="feature-title">Alto Índice de Conteúdo de IA</div>
-                        <div class="feature-desc">
-                            Foram detectados ${result.aiPatterns.patterns.length} padrões típicos de IA.
-                            Considere revisar o texto para incluir mais elementos pessoais e originais.
-                        </div>
-                    </div>
-                `;
-            } else {
-                recHTML += `
-                    <div class="feature-card">
-                        <div class="feature-title">Resultado Inconclusivo</div>
-                        <div class="feature-desc">
-                            O texto apresenta características mistas (${result.humanProbability}% humano).
-                        </div>
-                    </div>
-                `;
-            }
-            
-            if (result.humanElements < 2) {
-                recHTML += `
-                    <div class="feature-card">
-                        <div class="feature-title">Sugestão de Melhoria</div>
-                        <div class="feature-desc">
-                            Para aumentar a autenticidade, inclua mais opiniões pessoais, 
-                            experiências ou reflexões subjetivas.
-                        </div>
-                    </div>
-                `;
-            }
-            
-            recommendations.innerHTML = recHTML;
-            
             // Prévia do texto
             document.getElementById('textPreview').textContent = result.analyzedText;
             
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
 
+        // GERAR PDF COMPLETO COM SUGESTÕES
         function generatePDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -1365,16 +1448,18 @@
             const dateStr = now.toLocaleDateString('pt-BR');
             const timeStr = now.toLocaleTimeString('pt-BR');
             
+            // Cabeçalho
             doc.setFillColor(41, 128, 185);
             doc.rect(0, 0, 210, 30, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(20);
-            doc.text('Relatório de Análise de Conteúdo', 105, 15, { align: 'center' });
+            doc.text('RELATÓRIO DE ANÁLISE DE CONTEÚDO', 105, 15, { align: 'center' });
             doc.setFontSize(10);
             doc.text(`Gerado em: ${dateStr} às ${timeStr}`, 105, 25, { align: 'center' });
             
             let yPosition = 40;
             
+            // Resultado principal
             doc.setTextColor(0, 0, 0);
             doc.setFontSize(16);
             doc.text('RESULTADO DA ANÁLISE', 20, yPosition);
@@ -1389,14 +1474,26 @@
             yPosition += 10;
             
             let verdict = '';
-            if (humanProb >= 70) verdict = 'PROVÁVEL CONTEÚDO HUMANO';
-            else if (humanProb >= 40) verdict = 'RESULTADO MISTO';
-            else verdict = 'PROVÁVEL CONTEÚDO DE IA';
+            let verdictColor = [0, 0, 0];
             
+            if (humanProb >= 70) {
+                verdict = 'PROVÁVEL CONTEÚDO HUMANO';
+                verdictColor = [39, 174, 96]; // Verde
+            } else if (humanProb >= 40) {
+                verdict = 'RESULTADO MISTO';
+                verdictColor = [243, 156, 18]; // Laranja
+            } else {
+                verdict = 'PROVÁVEL CONTEÚDO DE IA';
+                verdictColor = [231, 76, 60]; // Vermelho
+            }
+            
+            doc.setTextColor(verdictColor[0], verdictColor[1], verdictColor[2]);
             doc.setFontSize(14);
             doc.text(`Veredito: ${verdict}`, 20, yPosition);
             yPosition += 15;
             
+            // Métricas detalhadas
+            doc.setTextColor(0, 0, 0);
             doc.setFontSize(16);
             doc.text('MÉTRICAS DETALHADAS', 20, yPosition);
             yPosition += 10;
@@ -1404,14 +1501,14 @@
             doc.setFontSize(10);
             const metrics = [
                 `Tipo de Conteúdo: ${document.querySelector(`#contentType option[value="${currentAnalysisResult.contentType}"]`).textContent}`,
-                `Palavras: ${currentAnalysisResult.wordCount}`,
-                `Sentenças: ${currentAnalysisResult.sentenceCount}`,
-                `Parágrafos: ${currentAnalysisResult.paragraphCount}`,
-                `Complexidade: ${currentAnalysisResult.complexity}`,
-                `Coerência: ${currentAnalysisResult.coherence}`,
-                `Originalidade: ${currentAnalysisResult.originality}`,
+                `Total de Palavras: ${currentAnalysisResult.wordCount}`,
+                `Total de Sentenças: ${currentAnalysisResult.sentenceCount}`,
+                `Total de Parágrafos: ${currentAnalysisResult.paragraphCount}`,
+                `Complexidade Linguística: ${currentAnalysisResult.complexity}`,
+                `Coerência Contextual: ${currentAnalysisResult.coherence}`,
+                `Nível de Originalidade: ${currentAnalysisResult.originality}`,
                 `Elementos Humanos: ${currentAnalysisResult.humanElements > 3 ? 'Alta' : currentAnalysisResult.humanElements > 1 ? 'Média' : 'Baixa'}`,
-                `Padrões de IA: ${currentAnalysisResult.aiPatterns.score > 5 ? 'Alta' : currentAnalysisResult.aiPatterns.score > 2 ? 'Média' : 'Baixa'}`,
+                `Padrões de IA Detectados: ${currentAnalysisResult.aiPatterns.score > 5 ? 'Alta' : currentAnalysisResult.aiPatterns.score > 2 ? 'Média' : 'Baixa'}`,
                 `Diversidade Vocabular: ${Math.round(currentAnalysisResult.vocabDiversity * 100)}%`
             ];
             
@@ -1426,6 +1523,7 @@
             
             yPosition += 10;
             
+            // Padrões de IA detectados
             if (currentAnalysisResult.aiPatterns.patterns.length > 0) {
                 if (yPosition > 250) {
                     doc.addPage();
@@ -1449,29 +1547,80 @@
                 yPosition += 10;
             }
             
+            // SUGESTÕES PARA HUMANIZAR O TEXTO
+            if (yPosition > 240) {
+                doc.addPage();
+                yPosition = 20;
+            }
+            
+            doc.setFontSize(16);
+            doc.text('SUGESTÕES PARA HUMANIZAR O TEXTO', 20, yPosition);
+            yPosition += 10;
+            
+            doc.setFontSize(10);
+            
+            if (currentAnalysisResult.suggestions.length > 0) {
+                currentAnalysisResult.suggestions.forEach(suggestion => {
+                    if (yPosition > 270) {
+                        doc.addPage();
+                        yPosition = 20;
+                    }
+                    doc.text(`• ${suggestion}`, 25, yPosition);
+                    yPosition += 6;
+                });
+            } else {
+                doc.text('• O texto já apresenta características humanas consistentes', 25, yPosition);
+                yPosition += 6;
+            }
+            
+            yPosition += 10;
+            
+            // RECOMENDAÇÕES GERAIS
             if (yPosition > 250) {
                 doc.addPage();
                 yPosition = 20;
             }
             
             doc.setFontSize(16);
-            doc.text('RECOMENDAÇÕES', 20, yPosition);
+            doc.text('RECOMENDAÇÕES GERAIS', 20, yPosition);
             yPosition += 10;
             
             doc.setFontSize(10);
-            let recommendationText = '';
+            let generalRecommendations = [];
+            
             if (currentAnalysisResult.humanProbability >= 70) {
-                recommendationText = 'O texto apresenta fortes indícios de autoria humana. Continue com o bom trabalho!';
+                generalRecommendations = [
+                    'Continue desenvolvendo seu estilo pessoal de escrita',
+                    'Mantenha a autenticidade e originalidade do texto',
+                    'Considere compartilhar experiências pessoais para enriquecer o conteúdo'
+                ];
             } else if (currentAnalysisResult.humanProbability <= 30) {
-                recommendationText = 'Foram detectados padrões típicos de IA. Considere revisar o texto para incluir mais elementos pessoais e originais.';
+                generalRecommendations = [
+                    'Substitua frases genéricas por opiniões pessoais',
+                    'Adicione exemplos baseados em experiências reais',
+                    'Varie a estrutura das sentenças para evitar padrões repetitivos',
+                    'Inclua perguntas retóricas para engajar o leitor',
+                    'Use um vocabulário mais diversificado e expressivo'
+                ];
             } else {
-                recommendationText = 'O texto apresenta características mistas. Considere adicionar mais elementos humanos para aumentar a autenticidade.';
+                generalRecommendations = [
+                    'Trabalhe na incorporação de mais elementos pessoais',
+                    'Desenvolva um estilo de escrita mais distintivo',
+                    'Considere incluir perspectivas únicas e originais'
+                ];
             }
             
-            const splitRecommendations = doc.splitTextToSize(recommendationText, 170);
-            doc.text(splitRecommendations, 20, yPosition);
+            generalRecommendations.forEach(recommendation => {
+                if (yPosition > 270) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                doc.text(`• ${recommendation}`, 25, yPosition);
+                yPosition += 6;
+            });
             
-            doc.save(`relatorio-analise-${dateStr.replace(/\//g, '-')}.pdf`);
+            // Salvar PDF
+            doc.save(`relatorio-analise-${dateStr.replace(/\//g, '-')}-${humanProb}humano.pdf`);
         }
     </script>
 </body>
