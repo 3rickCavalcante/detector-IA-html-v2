@@ -650,7 +650,7 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
                 const fileName = file.name.toLowerCase();
                 
                 if (fileName.endsWith('.pdf')) {
-                    // Simulação de extração de PDF (em um sistema real, usar uma biblioteca como pdf.js)
+                    // Simulação de extração de PDF
                     text = "Texto extraído do PDF: \n\n[Este é um texto simulado extraído de um arquivo PDF. Em uma implementação real, você usaria uma biblioteca como pdf.js para extrair o texto real do documento.]\n\n" + 
                            "Para demonstração, vamos usar um texto de exemplo sobre educação:\n\n" +
                            sampleTexts.academic;
@@ -706,7 +706,7 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
             });
         });
 
-        // Análise de texto (mantida da versão anterior)
+        // Análise de texto - IMPLEMENTAÇÃO COMPLETA
         document.getElementById('analyzeBtn').addEventListener('click', function() {
             const text = document.getElementById('textInput').value.trim();
             const contentType = document.getElementById('contentType').value;
@@ -730,63 +730,442 @@ Em síntese, a articulação entre alfabetização e letramento constitui-se com
             }, 1500);
         });
         
-        // ... (restante do código de análise mantido igual da versão anterior)
-        // [Todo o código das funções analyzeText, detectAIPatterns, calculateVocabDiversity, 
-        // detectHumanElements, analyzeStructureAndComplexity, calculateVariance, 
-        // detectAcademicElements, analyzeOriginality, getContentTypeAdjustment, displayResults
-        // permanece EXATAMENTE igual à versão anterior]
-        
-        // Para economizar espaço, vou incluir apenas as assinaturas das funções
-        // Na implementação real, todo o código de análise seria copiado aqui
-        
         function analyzeText(text, contentType) {
-            // Implementação idêntica à versão anterior
-            // ... (código completo)
+            // Abordagem balanceada - não assume nada inicialmente
+            let humanScore = 50; // Ponto neutro
+            
+            // Análise básica do texto
+            const wordCount = text.split(/\s+/).length;
+            const sentenceCount = text.split(/[.!?]+/).length - 1;
+            const paragraphCount = text.split(/\n\s*\n/).length;
+            
+            // 1. DETECÇÃO DE PADRÕES DE IA (FORTE)
+            const aiPatterns = detectAIPatterns(text);
+            humanScore -= aiPatterns.score * 3; // Penalidade forte para padrões de IA
+            
+            // 2. ELEMENTOS HUMANOS (FORTE)
+            const humanElements = detectHumanElements(text);
+            humanScore += humanElements * 4; // Bônus forte para elementos humanos
+            
+            // 3. ESTRUTURA E COMPLEXIDADE (MODERADO)
+            const structureAnalysis = analyzeStructureAndComplexity(text);
+            humanScore += structureAnalysis.score;
+            
+            // 4. ELEMENTOS ACADÊMICOS (MODERADO - apenas para textos acadêmicos)
+            let academicBonus = 0;
+            if (contentType === 'academic') {
+                const academicElements = detectAcademicElements(text);
+                academicBonus = academicElements * 3;
+                humanScore += academicBonus;
+            }
+            
+            // 5. ORIGINALIDADE E DIVERSIDADE LINGUÍSTICA (MODERADO)
+            const originalityScore = analyzeOriginality(text);
+            humanScore += originalityScore;
+            
+            // 6. BÔNUS/PENALIDADE POR TIPO DE CONTEÚDO (LEVE)
+            const contentAdjustment = getContentTypeAdjustment(contentType, text);
+            humanScore += contentAdjustment;
+            
+            // Limitar a pontuação entre 5 e 95
+            humanScore = Math.max(5, Math.min(95, humanScore));
+            
+            return {
+                humanProbability: Math.round(humanScore),
+                aiProbability: Math.round(100 - humanScore),
+                contentType: contentType,
+                wordCount: wordCount,
+                sentenceCount: sentenceCount,
+                paragraphCount: paragraphCount,
+                aiPatterns: aiPatterns,
+                humanElements: humanElements,
+                structureScore: structureAnalysis.score,
+                academicBonus: academicBonus,
+                originalityScore: originalityScore,
+                complexity: structureAnalysis.complexity,
+                coherence: structureAnalysis.coherence,
+                originality: originalityScore > 3 ? 'Alta' : originalityScore > 1 ? 'Média' : 'Baixa'
+            };
         }
         
         function detectAIPatterns(text) {
-            // Implementação idêntica à versão anterior
-            // ... (código completo)
+            // Padrões específicos e genéricos de IA
+            const patterns = {
+                // Padrões muito específicos de IA
+                explicitAI: [
+                    /como um (modelo de )?IA/gi,
+                    /como uma inteligência artificial/gi,
+                    /não tenho (opiniões|emoções|sentimentos) pessoais/gi,
+                    /baseado (exclusivamente|apenas) no meu treinamento/gi,
+                    /como (um|uma) (assistente|modelo) de linguagem/gi,
+                    /não possuo (consciência|experiências|memórias)/gi,
+                    /minhas respostas são baseadas/gi,
+                    /fui treinado|fui programado/gi
+                ],
+                
+                // Padrões genéricos muito comuns em IA
+                genericPhrases: [
+                    /é importante (ressaltar|destacar|notar)/gi,
+                    /vale (ressaltar|destacar|mencionar)/gi,
+                    /além disso,/gi,
+                    /dessa forma,/gi,
+                    /em resumo,/gi,
+                    /em síntese,/gi,
+                    /em conclusão,/gi,
+                    /por outro lado,/gi,
+                    /é fundamental (entender|compreender)/gi,
+                    /é crucial (considerar|notar)/gi,
+                    /é essencial (mencionar|destacar)/gi,
+                    /constitui-se como/gi,
+                    /configura-se como/gi,
+                    /pode-se afirmar que/gi
+                ],
+                
+                // Estruturas repetitivas
+                repetitiveStructures: [
+                    /\.\s*Além disso,\s*[A-Z]/g,
+                    /\.\s*É importante\s*[A-Z]/g,
+                    /\.\s*Vale ressaltar\s*[A-Z]/g,
+                    /\.\s*Portanto,\s*[A-Z]/g
+                ]
+            };
+            
+            let score = 0;
+            const detectedPatterns = [];
+            
+            // Verificar padrões explícitos de IA
+            patterns.explicitAI.forEach((pattern, index) => {
+                const matches = text.match(pattern);
+                if (matches) {
+                    score += matches.length * 3;
+                    detectedPatterns.push(`Padrão explícito de IA: "${matches[0]}"`);
+                }
+            });
+            
+            // Verificar frases genéricas (limitar o impacto)
+            let genericCount = 0;
+            patterns.genericPhrases.forEach(pattern => {
+                const matches = text.match(pattern);
+                if (matches) genericCount += matches.length;
+            });
+            
+            if (genericCount > 2) {
+                score += Math.min(genericCount - 2, 5);
+                detectedPatterns.push(`${genericCount} frases genéricas típicas de IA`);
+            }
+            
+            // Verificar estruturas repetitivas
+            patterns.repetitiveStructures.forEach(pattern => {
+                const matches = text.match(pattern);
+                if (matches && matches.length > 1) {
+                    score += matches.length * 2;
+                    detectedPatterns.push(`Estrutura repetitiva: inícios de frase similares`);
+                }
+            });
+            
+            // Penalidade por falta de diversidade vocabular
+            const vocabDiversity = calculateVocabDiversity(text);
+            if (vocabDiversity < 0.4) {
+                score += 3;
+                detectedPatterns.push(`Baixa diversidade vocabular (${Math.round(vocabDiversity * 100)}%)`);
+            }
+            
+            return {
+                score: Math.min(score, 15), // Limitar o impacto máximo
+                patterns: detectedPatterns
+            };
         }
         
         function calculateVocabDiversity(text) {
-            // Implementação idêntica à versão anterior
-            // ... (código completo)
+            const words = text.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+            const uniqueWords = new Set(words);
+            return uniqueWords.size / words.length;
         }
         
         function detectHumanElements(text) {
-            // Implementação idêntica à versão anterior
-            // ... (código completo)
+            // Elementos que comprovam autoria humana
+            const humanIndicators = [
+                /expressões? idiomáticas?/gi,
+                /metáforas?/gi,
+                /humor|ironia|sarcasmo/gi,
+                /opiniões? (pessoais|subjetivas)/gi,
+                /experiências? pessoais?/gi,
+                /(minha|nossa) (experiência|vivência)/gi,
+                /(acredito|penso|considero|acho) que/gi,
+                /(percebi|notei|observei) que/gi,
+                /críticas? (pessoais|específicas)/gi,
+                /reflexões? pessoais?/gi,
+                /exemplos? (concretos|específicos|pessoais)/gi,
+                /contradições? (explícitas|intencionais)/gi,
+                /vozes? (ativas|pessoais)/gi,
+                /(enfatizo|destaco|saliento) que/gi,
+                /na minha (visão|perspectiva|opinião)/gi
+            ];
+            
+            let humanCount = 0;
+            humanIndicators.forEach(indicator => {
+                const matches = text.match(indicator);
+                if (matches) humanCount += matches.length;
+            });
+            
+            return Math.min(humanCount, 8);
         }
         
         function analyzeStructureAndComplexity(text) {
-            // Implementação idêntica à versão anterior
-            // ... (código completo)
+            let score = 0;
+            
+            // Análise de complexidade
+            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+            const avgSentenceLength = text.split(/\s+/).length / Math.max(sentences.length, 1);
+            
+            // Bônus por sentenças complexas
+            let complexSentences = 0;
+            sentences.forEach(sentence => {
+                const words = sentence.trim().split(/\s+/);
+                if (words.length > 18 && 
+                   (sentence.includes(',') || sentence.includes(';') || 
+                    sentence.includes(':') || sentence.includes('—'))) {
+                    complexSentences++;
+                }
+            });
+            
+            score += Math.min(complexSentences, 4);
+            
+            // Bônus por variação no tamanho das sentenças
+            const sentenceLengths = sentences.map(s => s.split(/\s+/).length);
+            const lengthVariance = calculateVariance(sentenceLengths);
+            if (lengthVariance > 20) score += 2;
+            
+            return {
+                score: score,
+                complexity: avgSentenceLength > 20 ? 'Alta' : avgSentenceLength > 12 ? 'Média' : 'Baixa',
+                coherence: score > 3 ? 'Alta' : score > 1 ? 'Média' : 'Baixa'
+            };
         }
         
         function calculateVariance(numbers) {
-            // Implementação idêntica à versão anterior
-            // ... (código completo)
+            if (numbers.length === 0) return 0;
+            const mean = numbers.reduce((a, b) => a + b) / numbers.length;
+            return numbers.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / numbers.length;
         }
         
         function detectAcademicElements(text) {
-            // Implementação idêntica à versão anterior
-            // ... (código completo)
+            // Elementos que indicam texto acadêmico genuíno
+            const academicIndicators = [
+                /resumo:/gi,
+                /abstract/gi,
+                /palavras?-chave/gi,
+                /introdução/gi,
+                /metodologia/gi,
+                /resultados/gi,
+                /discussão/gi,
+                /conclusão/gi,
+                /referências/gi,
+                /bibliografia/gi,
+                /citações?/gi,
+                /autor\(?es\)?/gi,
+                /\[[\d]+\]/g,
+                /\([A-Za-z]+, \d{4}\)/g,
+                /p\. \d+/gi,
+                /(conforme|segundo) [A-Z][a-z]+/g,
+                /(ibidem|idem|op\. cit)/gi
+            ];
+            
+            let academicCount = 0;
+            academicIndicators.forEach(indicator => {
+                const matches = text.match(indicator);
+                if (matches) academicCount += matches.length;
+            });
+            
+            return Math.min(academicCount, 5);
         }
         
         function analyzeOriginality(text) {
-            // Implementação idêntica à versão anterior
-            // ... (código completo)
+            let score = 0;
+            
+            // Verificar presença de ideias únicas
+            const uniqueIdeas = [
+                /(inovador|original|criativo)/gi,
+                /(sugiro|proponho|recomendo)/gi,
+                /(diferentemente|ao contrário) de/gi,
+                /(surpreendentemente|curiosamente)/gi
+            ];
+            
+            uniqueIdeas.forEach(pattern => {
+                if (text.match(pattern)) score += 1;
+            });
+            
+            // Bônus por perguntas retóricas
+            const rhetoricalQuestions = (text.match(/\?/g) || []).length;
+            score += Math.min(rhetoricalQuestions, 2);
+            
+            return score;
         }
         
         function getContentTypeAdjustment(contentType, text) {
-            // Implementação idêntica à versão anterior
-            // ... (código completo)
+            const adjustments = {
+                'academic': 2,
+                'creative': 3,
+                'journalistic': 1,
+                'technical': 2,
+                'conversational': -1,
+                'general': 0
+            };
+            
+            return adjustments[contentType] || 0;
         }
         
         function displayResults(result) {
-            // Implementação idêntica à versão anterior
-            // ... (código completo)
+            // Mostrar a seção de resultados
+            document.getElementById('results').style.display = 'block';
+            
+            // Atualizar a barra de probabilidade
+            const probabilityFill = document.getElementById('probabilityFill');
+            const probabilityText = document.getElementById('probabilityText');
+            
+            probabilityFill.style.width = `${result.humanProbability}%`;
+            probabilityText.textContent = `${result.humanProbability}%`;
+            
+            // Ajustar cor baseada na probabilidade
+            if (result.humanProbability >= 70) {
+                probabilityFill.style.backgroundColor = 'var(--success)';
+            } else if (result.humanProbability >= 40) {
+                probabilityFill.style.backgroundColor = 'var(--warning)';
+            } else {
+                probabilityFill.style.backgroundColor = 'var(--danger)';
+            }
+            
+            // Exibir veredito
+            const verdict = document.getElementById('verdict');
+            if (result.humanProbability >= 70) {
+                verdict.innerHTML = '<span class="human-indicator">✓ Provável conteúdo humano</span>';
+            } else if (result.humanProbability >= 40) {
+                verdict.innerHTML = '<span style="color: var(--warning)">⚠️ Resultado misto</span>';
+            } else {
+                verdict.innerHTML = '<span class="ai-indicator">✗ Provável conteúdo de IA</span>';
+            }
+            
+            // Atualizar detalhes da análise
+            document.getElementById('contentTypeResult').textContent = 
+                document.querySelector(`#contentType option[value="${result.contentType}"]`).textContent;
+            document.getElementById('complexityResult').textContent = result.complexity;
+            document.getElementById('coherenceResult').textContent = result.coherence;
+            document.getElementById('originalityResult').textContent = result.originality;
+            document.getElementById('aiPatternsResult').textContent = 
+                result.aiPatterns.score > 5 ? 'Alta' : result.aiPatterns.score > 2 ? 'Média' : 'Baixa';
+            document.getElementById('humanElementsResult').textContent = 
+                result.humanElements > 3 ? 'Alta' : result.humanElements > 1 ? 'Média' : 'Baixa';
+            
+            // Mostrar padrões de IA detectados se houver
+            const aiPatternsSection = document.getElementById('aiPatternsSection');
+            const aiPatternsList = document.getElementById('aiPatternsList');
+            
+            if (result.aiPatterns.patterns.length > 0) {
+                aiPatternsSection.style.display = 'block';
+                aiPatternsList.innerHTML = '';
+                
+                result.aiPatterns.patterns.forEach(pattern => {
+                    const patternItem = document.createElement('div');
+                    patternItem.style.padding = '0.5rem 0';
+                    patternItem.style.borderBottom = '1px solid #ffcdd2';
+                    patternItem.textContent = `• ${pattern}`;
+                    aiPatternsList.appendChild(patternItem);
+                });
+            } else {
+                aiPatternsSection.style.display = 'none';
+            }
+            
+            // Gerar características identificadas
+            const featuresList = document.getElementById('featuresList');
+            featuresList.innerHTML = '';
+            
+            const features = [
+                {
+                    title: 'Estrutura Textual',
+                    desc: `${result.paragraphCount} parágrafos, ${result.sentenceCount} frases, ${result.wordCount} palavras`
+                },
+                {
+                    title: 'Elementos Humanos',
+                    desc: result.humanElements > 0 ? 
+                          `${result.humanElements} elementos humanos identificados` : 
+                          'Poucos elementos humanos explícitos'
+                },
+                {
+                    title: 'Complexidade',
+                    desc: result.complexity === 'Alta' ? 'Linguagem complexa e elaborada' :
+                          result.complexity === 'Média' ? 'Complexidade moderada' : 'Linguagem simples'
+                },
+                {
+                    title: 'Originalidade',
+                    desc: result.originality === 'Alta' ? 'Ideias originais presentes' :
+                          result.originality === 'Média' ? 'Alguma originalidade' : 'Pouca originalidade detectada'
+                }
+            ];
+            
+            features.forEach(feature => {
+                const featureCard = document.createElement('div');
+                featureCard.className = 'feature-card';
+                featureCard.innerHTML = `
+                    <div class="feature-title">${feature.title}</div>
+                    <div class="feature-desc">${feature.desc}</div>
+                `;
+                featuresList.appendChild(featureCard);
+            });
+            
+            // Gerar recomendações
+            const recommendations = document.getElementById('recommendations');
+            let recHTML = '';
+            
+            if (result.humanProbability >= 70) {
+                recHTML += `
+                    <div class="feature-card">
+                        <div class="feature-title">Texto Classificado como Humano</div>
+                        <div class="feature-desc">
+                            O texto apresenta fortes indícios de autoria humana (${result.humanProbability}%).
+                            ${result.contentType === 'academic' ? 'A estrutura acadêmica contribuiu para esta classificação.' : ''}
+                        </div>
+                    </div>
+                `;
+            } else if (result.humanProbability <= 30) {
+                recHTML += `
+                    <div class="feature-card">
+                        <div class="feature-title">Alto Índice de Conteúdo de IA</div>
+                        <div class="feature-desc">
+                            Foram detectados ${result.aiPatterns.patterns.length} padrões típicos de IA.
+                            Considere revisar o texto para incluir mais elementos pessoais e originais.
+                        </div>
+                    </div>
+                `;
+            } else {
+                recHTML += `
+                    <div class="feature-card">
+                        <div class="feature-title">Resultado Inconclusivo</div>
+                        <div class="feature-desc">
+                            O texto apresenta características mistas (${result.humanProbability}% humano).
+                            ${result.aiPatterns.patterns.length > 0 ? 
+                              `Foram detectados ${result.aiPatterns.patterns.length} padrões de IA.` : 
+                              'Poucos elementos humanos explícitos foram identificados.'}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (result.humanElements < 2) {
+                recHTML += `
+                    <div class="feature-card">
+                        <div class="feature-title">Sugestão de Melhoria</div>
+                        <div class="feature-desc">
+                            Para aumentar a autenticidade, inclua mais opiniões pessoais, 
+                            experiências ou reflexões subjetivas.
+                        </div>
+                    </div>
+                `;
+            }
+            
+            recommendations.innerHTML = recHTML;
+            
+            // Rolagem suave para os resultados
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 </body>
